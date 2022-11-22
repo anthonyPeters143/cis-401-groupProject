@@ -12,7 +12,7 @@ public class Client {
         byte[] dataBuffer = new byte[65535];
         int interfaceServerPort,
                 loginKey, paymentKey;
-        boolean inputValidFlag = false;
+//        boolean inputValidFlag = false;
         String usernameInput = "", passwordInput = "", encryptedSignIn;
 
         DatagramPacket sendingPacket, receivingPacket  = new DatagramPacket(dataBuffer, dataBuffer.length);;
@@ -35,7 +35,7 @@ public class Client {
             loginKey = 4;
 
             // Prompt for username and password input, loop if invalid
-            do {
+//            do {
                 try {
                     System.out.println("Enter username of account: ");
                     usernameInput = input.next().trim().toUpperCase();
@@ -43,15 +43,15 @@ public class Client {
                     passwordInput = input.next().trim().toUpperCase();
                 } catch (Exception exception) {}
 
-                // Verify username and password doesn't contain any whitespace characters
-                if (usernameInput.matches("") && passwordInput.matches("")) {
-                    // Inputs valid, switch flag
-                    inputValidFlag = true;
-                } else {
-                    // Inputs invalid repeat prompt
-                    System.out.println("Error input invalid, whitespace character included");
-                }
-            } while (!inputValidFlag);
+//                // Verify username and password doesn't contain any whitespace characters
+//                if (usernameInput.matches("") && passwordInput.matches("")) {
+//                    // Inputs valid, switch flag
+//                    inputValidFlag = true;
+//                } else {
+//                    // Inputs invalid repeat prompt
+//                    System.out.println("Error input invalid, whitespace character included");
+//                }
+//            } while (!inputValidFlag);
 
             // Create encryptedSignIn from pattern "username" + "_" + "password" using 4 for key
             encryptedSignIn = keyEncoding(usernameInput + "_" + passwordInput, loginKey);
@@ -67,7 +67,7 @@ public class Client {
 
             // Check if confirmation is true
 
-            // Prompt user to choose items from list and send data to InterfaceServer
+            // Prompt user to choose items from InterfaceServer list and send selection back InterfaceServer
 
             // Prompt user for payment input
 

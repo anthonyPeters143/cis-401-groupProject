@@ -1,7 +1,82 @@
 package InterfaceServer;
 
-public class HandleInterfaceLogin {
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.util.LinkedList;
 
+public class HandleInterface {
+    int loginKey,
+        clientPort, interfaceSeverPort, dataServerPort,
+        accountIndex;
+    String usernameEncrypted, usernameDecrypted,
+            passwordEncrypted, passwordDecrypted;
+
+    DatagramPacket clientPacket;
+    DatagramSocket interfaceSocket;
+    InetAddress clientAddress;
+    LinkedList<LoginNode> loginNodeLinkedList;
+
+
+    HandleInterface(DatagramPacket clientPacketInput, int loginKeyInput,
+                    DatagramSocket interfaceSocketInput, LinkedList<LoginNode> loginNodeLinkedListInput) {
+        // Initialize fields
+        clientPacket = clientPacketInput;
+        clientPort = clientPacketInput.getPort();
+        clientAddress = clientPacketInput.getAddress();
+        loginKey = loginKeyInput;
+        interfaceSocket = interfaceSocketInput;
+        loginNodeLinkedList = loginNodeLinkedListInput;
+
+
+        // Initialize connection to DataServer TODO
+
+    }
+
+    // Attempt to log in into account using username and password, encoded using loginKey value. Will decrypt inputs
+    // then check if inputs match any LoginNodes. If found to match then accountIndex will be recorded for later use.
+    public boolean login() {
+        try {
+            // Spilt input by "_" into encrypted username and password
+            String[] splitInput = (new String(clientPacket.getData()).trim()).split("_");
+            usernameDecrypted = keyDecoding(splitInput[0], loginKey);
+            passwordDecrypted = keyDecoding(splitInput[1], loginKey);
+
+        } catch (Exception exception) {
+            // If exception occurs then set both username and password to null
+            usernameDecrypted = null;
+            passwordDecrypted = null;
+        }
+
+        // If inputs aren't null
+        if (usernameDecrypted != null && passwordDecrypted != null) {
+            // Try login with username and password
+            if (attemptLogin(usernameDecrypted, passwordDecrypted) != -1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // Will attempt to log in using username and password inputs. If matching then accountIndex value will be recorded,
+    // if not then accountIndex will be set to -1.
+    private int attemptLogin(String usernameInput, String passwordInput) {
+        // Cycle through loginNodeLinkedList to match inputs to LoginNode fields
+        for (int index = 0; index < loginNodeLinkedList.size(); index++) {
+            // Test if username and password match LoginNode
+            if (loginNodeLinkedList.get(index).getUsername().matches(usernameInput) &&
+            loginNodeLinkedList.get(index).getPassword().matches(passwordInput)) {
+                // Username and password match Node, set and return index number
+                accountIndex = index;
+                return accountIndex;
+            }
+        }
+
+        // No LoginNodes contain matching username and password set and return "-1" as index number
+        accountIndex = -1;
+        return accountIndex;
+    }
 
 
     /**
