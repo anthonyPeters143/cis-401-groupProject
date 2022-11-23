@@ -1,0 +1,9 @@
+1:Bacon:3.00
+2:Milk:3.50
+3:Eggs:2.25
+4:Hot-Sauce:3.00
+5:Coffee:5.00
+6:Salt:1.50
+7:Potato:3.50
+8:Onions:3.00
+9:Oranges:3.00

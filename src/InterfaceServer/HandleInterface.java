@@ -8,7 +8,7 @@ import java.util.LinkedList;
 public class HandleInterface {
     int loginKey,
         clientPort, interfaceSeverPort, dataServerPort,
-        accountIndex;
+        accountKey;
     String usernameEncrypted, usernameDecrypted,
             passwordEncrypted, passwordDecrypted;
 
@@ -18,10 +18,12 @@ public class HandleInterface {
     DatagramSocket interfaceSocket;
     InetAddress clientAddress;
     LinkedList<LoginNode> loginNodeLinkedList;
+    LinkedList<CatalogNode> catalogNodeLinkedList;
 
 
     HandleInterface(DatagramPacket clientPacketInput, int loginKeyInput,
-                    DatagramSocket interfaceSocketInput, LinkedList<LoginNode> loginNodeLinkedListInput) {
+                    DatagramSocket interfaceSocketInput, LinkedList<LoginNode> loginNodeLinkedListInput,
+                    LinkedList<CatalogNode> catalogNodeLinkedListInput) {
         // Initialize fields
         clientPacket = clientPacketInput;
         clientPort = clientPacketInput.getPort();
@@ -29,6 +31,7 @@ public class HandleInterface {
         loginKey = loginKeyInput;
         interfaceSocket = interfaceSocketInput;
         loginNodeLinkedList = loginNodeLinkedListInput;
+        catalogNodeLinkedList = catalogNodeLinkedListInput;
 
         // Initialize system messages
         smInvalidLogin = "Username or password input is invalid or not found, please retry";
@@ -39,13 +42,13 @@ public class HandleInterface {
     }
 
     // Attempt to log in into account using username and password, encoded using loginKey value. Will decrypt inputs
-    // then check if inputs match any LoginNodes. If found to match then accountIndex will be recorded for later use.
+    // then check if inputs match any LoginNodes. If found to match then accountKey will be recorded for later use.
     public boolean login() {
         try {
             // Spilt input by "_" into encrypted username and password
             String[] splitInput = (new String(clientPacket.getData()).trim()).split("_");
-            usernameDecrypted = keyDecoding(splitInput[0], loginKey).toLowerCase();
-            passwordDecrypted = keyDecoding(splitInput[1], loginKey).toLowerCase();
+            usernameDecrypted = keyDecoding(splitInput[0], loginKey).toUpperCase();
+            passwordDecrypted = keyDecoding(splitInput[1], loginKey).toUpperCase();
 
         } catch (Exception exception) {
             // If exception occurs then set both username and password to null
@@ -55,7 +58,7 @@ public class HandleInterface {
 
         // If inputs aren't null
         if (usernameDecrypted != null && passwordDecrypted != null) {
-            // Try login with username and password
+            // Try login with username and password and set accountKey
             if (attemptLogin(usernameDecrypted, passwordDecrypted) != -1) {
                 return true;
             }
@@ -64,8 +67,8 @@ public class HandleInterface {
         return false;
     }
 
-    // Will attempt to log in using username and password inputs. If matching then accountIndex value will be recorded,
-    // if not then accountIndex will be set to -1.
+    // Will attempt to log in using username and password inputs. If matching then accountKey value will be recorded,
+    // if not then accountKey will be set to -1.
     private int attemptLogin(String usernameInput, String passwordInput) {
         // Cycle through loginNodeLinkedList to match inputs to LoginNode fields
         for (int index = 0; index < loginNodeLinkedList.size(); index++) {
@@ -73,19 +76,65 @@ public class HandleInterface {
             if (loginNodeLinkedList.get(index).getUsername().matches(usernameInput) &&
             loginNodeLinkedList.get(index).getPassword().matches(passwordInput)) {
                 // Username and password match Node, set and return index number
-                accountIndex = index;
-                return accountIndex;
+                accountKey = loginNodeLinkedList.get(index).getKey();
+                return accountKey;
             }
         }
 
         // No LoginNodes contain matching username and password set and return "-1" as index number
-        accountIndex = -1;
-        return accountIndex;
+        accountKey = -1;
+        return accountKey;
     }
 
-    // Returns encoded login fail message using login key
-    public String getEncryptedLoginFail() {
-        return keyEncoding(smInvalidLogin, loginKey);
+    // Updates the client packet in thread
+    public void updateClientPacket(DatagramPacket newPacket) {
+        clientPacket = newPacket;
+    }
+
+    // Returns encoded login update message using login key
+    public String getLoginResult(boolean result) {
+        String loginResult = "";
+
+        // Attach boolean flag for result
+        if (result) {
+            loginResult = loginResult.concat("1_");
+        } else {
+            loginResult = loginResult.concat("0_");
+        }
+
+        // Attach accountKey
+        loginResult = loginResult.concat(String.valueOf(accountKey));
+
+        return keyEncoding(loginResult, loginKey);
+    }
+
+    // Loops through CatalogNodeLinkedList and creates a string including indexNumber, name, and price. Will use
+    // pattern indexNumber + ":" + name + ":" + price "\n", will skip new line on last line.
+    private static String prepItemList(LinkedList<CatalogNode> itemList) {
+        // Initialize String
+        String itemListOutput = "";
+
+        // Loop through itemList attaching item as pattern "indexNumber-"
+        for (int index = 0; index < itemList.size(); index++) {
+            // Add item's indexNumber, name, and price
+            itemListOutput = itemListOutput.concat(
+                    itemList.get(index).getIndexNumber() + ":" +
+                            itemList.get(index).getName() + ":" +
+                            itemList.get(index).getPrice());
+
+            // If not last loop then add \n character
+            if (index != itemList.size()) {
+                itemListOutput = itemListOutput.concat("\n");
+            }
+        }
+
+        // Return output string
+        return itemListOutput;
+    }
+
+    // Calls method to convert CatalogNodeLinkedList into a String, encoding using account key and returns it
+    public String getPreppedItemList() {
+        return prepItemList(catalogNodeLinkedList);
     }
 
     public InetAddress getClientAddress() {

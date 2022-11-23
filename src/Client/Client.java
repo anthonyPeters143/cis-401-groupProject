@@ -4,6 +4,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class Client {
@@ -11,9 +12,13 @@ public class Client {
         // Initialize variables
         byte[] dataBuffer = new byte[65535];
         int interfaceServerPort,
-                loginKey, paymentKey;
-//        boolean inputValidFlag = false;
-        String usernameInput = "", passwordInput = "", encryptedSignIn;
+                loginKey, paymentKey,
+                userAccountKey,
+                itemIndexInput;
+        boolean inputValidFlag = false, loginConfirmationFlag = false, itemSelectionFlag = false;
+        String usernameInput = "", passwordInput = "", encryptedSignIn,
+                itemListString;
+        String[] splitInput;
 
         DatagramPacket sendingPacket, receivingPacket  = new DatagramPacket(dataBuffer, dataBuffer.length);;
         DatagramSocket clientSocket;
@@ -35,39 +40,85 @@ public class Client {
             loginKey = 4;
 
             // Prompt for username and password input, loop if invalid
-//            do {
-                try {
-                    System.out.println("Enter username of account: ");
-                    usernameInput = input.next().trim().toUpperCase();
-                    System.out.println("Enter password of account: ");
-                    passwordInput = input.next().trim().toUpperCase();
-                } catch (Exception exception) {}
+            do {
+                do {
+                    try {
+                        System.out.println("\nUsername and passwords can include: letters, numbers, and underscores\n" +
+                                "Enter username of account: ");
+                        usernameInput = input.next().trim().toUpperCase();
+                        System.out.println("Enter password of account: ");
+                        passwordInput = input.next().trim().toUpperCase();
+                    } catch (Exception exception) {
+                    }
 
-//                // Verify username and password doesn't contain any whitespace characters
-//                if (usernameInput.matches("") && passwordInput.matches("")) {
-//                    // Inputs valid, switch flag
-//                    inputValidFlag = true;
-//                } else {
-//                    // Inputs invalid repeat prompt
-//                    System.out.println("Error input invalid, whitespace character included");
-//                }
-//            } while (!inputValidFlag);
+                    // Verify username and password contain only alphanumeric and underscore characters
+                    if (usernameInput.matches("\\w+") && passwordInput.matches("\\w+")) {
+                        // Inputs valid, switch flag
+                        inputValidFlag = true;
+                    } else {
+                        // Inputs invalid repeat prompt
+                        System.out.println("Input Error, invalid character included");
+                    }
+                } while (!inputValidFlag);
 
-            // Create encryptedSignIn from pattern "username" + "_" + "password" using 4 for key
-            encryptedSignIn = keyEncoding(usernameInput + "_" + passwordInput, loginKey);
+                // Create encryptedSignIn from pattern "username" + "_" + "password" using loginKey for key
+                encryptedSignIn = keyEncoding(usernameInput + "_" + passwordInput, loginKey);
 
-            // Create and send packet for InterfaceServer
-            clientSocket.send(new DatagramPacket(encryptedSignIn.getBytes(), encryptedSignIn.getBytes().length,
-                    interfaceServerAddress, interfaceServerPort));
+                // Create and send packet for InterfaceServer
+                clientSocket.send(new DatagramPacket(encryptedSignIn.getBytes(), encryptedSignIn.getBytes().length,
+                        interfaceServerAddress, interfaceServerPort));
 
-            // Receive packet from socket connection to InterfaceServer
-            clientSocket.receive(receivingPacket);
+                // Receive packet from socket connection to InterfaceServer
+                clientSocket.receive(receivingPacket);
 
-            // Split by "_", decode, and store received confirmation and paymentKey
+                // Split by "_", decode, and store received confirmation and paymentKey
+                splitInput = new String(receivingPacket.getData()).trim().split("_");
+                if (Integer.parseInt(keyDecoding(splitInput[0], loginKey)) == 1) {
+                    loginConfirmationFlag = true;
+                }
+                userAccountKey = Integer.parseInt(keyDecoding(splitInput[1], loginKey));
 
             // Check if confirmation is true
+            } while (!loginConfirmationFlag);
 
-            // Prompt user to choose items from InterfaceServer list and send selection back InterfaceServer
+            // Receive, separate by "\n" then ":", and store itemList data as itemListString
+            clientSocket.receive(receivingPacket);
+            splitInput = Arrays.toString(receivingPacket.getData()).split("\n");
+            itemListString = createItemListPrompt(splitInput);
+
+            // Prompt and loop till user chooses at least 1 item from InterfaceServer itemList
+            System.out.println(itemListString);
+            do {
+                try {
+                    System.out.print("Enter item index number or -1 for catalog : ");
+                    itemIndexInput = Integer.parseInt(input.next().trim());
+                } catch (Exception exception) {
+                    itemIndexInput = -2;
+                }
+
+                if (itemIndexInput != -2 && itemIndexInput != -1) {
+                    // itemIndex is valid
+
+                } else if (itemIndexInput == -1) {
+                    // itemIndex is for catalog
+
+                } else {
+                    // itemIndex is invalid
+
+                }
+
+                // Check if user has choosen 1 item yet then set flag state
+                if (___) {
+                    itemSelectionFlag = true;
+                }
+
+            } while (itemSelectionFlag);
+
+
+            // Send selection back InterfaceServer
+
+            // TODO TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            System.out.println("TESTING DONE");
 
             // Prompt user for payment input
 
@@ -79,6 +130,27 @@ public class Client {
         } catch (Exception exception) {}
 
 }
+
+    private static String createItemListPrompt(String[] itemListInput) {
+        // Initialize String
+        String itemListString = "IndexNumber:Name:Price\n";
+        String[] itemEntry;
+
+        // Loop through itemList attaching item as pattern "indexNumber-"
+        for (int index = 0; index < itemListInput.length - 1; index++) {
+            // Split each entry by ":" characters
+            itemEntry = itemListInput[index].split(":");
+
+            // Add item's indexNumber, name, and price
+            itemListString = itemListString.concat(
+                    itemEntry[0] + ":" +
+                            itemEntry[1] + ":" +
+                            itemEntry[2] + "\n");
+        }
+
+        // Return output string
+        return itemListString;
+    }
 
     /**
      * Method: keyEncoding, Method receives a message to encrypt and a key to encrypt it with. Message will be
