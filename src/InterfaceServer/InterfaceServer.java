@@ -15,13 +15,13 @@ public class InterfaceServer {
         byte[] dataBuffer = new byte[65535];
         boolean loginValid = false;
 //        String loginFileName = "login.txt";
-        DatagramPacket clientPacket, DataServerPacket;
+        DatagramPacket clientPacket, responsePacket, DataServerPacket;
         DatagramSocket interfaceSocket;
         LinkedList<LoginNode> loginNodeLinkedList;
 
         HandleInterface userThread;
 
-        // Initialize database from Content Root
+        // Initialize user database from Content Root Path
         loginNodeLinkedList = initializeFromFilePath("src/InterfaceServer/data/login.txt");
 
         // Set loginKey to default (4)
@@ -45,6 +45,9 @@ public class InterfaceServer {
 
                 // Loop till login input is valid
                 do {
+
+                    // TODO NEED TO RESET UP LOOP CREATE NEW SHOULD BE BEFORE LOOP AND THEN ONLY CHANGE THREAD AFTER
+
                     // Create and run login on user thread
                     userThread = new HandleInterface(clientPacket, loginKey, interfaceSocket, loginNodeLinkedList);
 
@@ -54,10 +57,16 @@ public class InterfaceServer {
                     if (!loginValid) {
                         // Input invalid
                         // Reset buffer
+                        dataBuffer = new byte[65535];
 
-                        // Send back invalidation conformation to client
+                        // Send back encrypted invalidation conformation to client
+                        responsePacket = new DatagramPacket(userThread.getEncryptedLoginFail().getBytes(),
+                                userThread.getEncryptedLoginFail().length(), userThread.getClientAddress(),
+                                userThread.getClientPort());
 
                         // Wait for new input
+                        clientPacket = new DatagramPacket(dataBuffer, dataBuffer.length);
+                        interfaceSocket.receive(clientPacket);
                     }
 
                 } while (!loginValid);
@@ -77,6 +86,7 @@ public class InterfaceServer {
                 // Forward conformation of creditData to client
 
                 // reset buffer for next request
+                dataBuffer = new byte[65535];
 
             }
         } catch (Exception exception) {}

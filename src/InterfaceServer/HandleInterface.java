@@ -12,6 +12,8 @@ public class HandleInterface {
     String usernameEncrypted, usernameDecrypted,
             passwordEncrypted, passwordDecrypted;
 
+    String smInvalidLogin;
+
     DatagramPacket clientPacket;
     DatagramSocket interfaceSocket;
     InetAddress clientAddress;
@@ -27,6 +29,9 @@ public class HandleInterface {
         loginKey = loginKeyInput;
         interfaceSocket = interfaceSocketInput;
         loginNodeLinkedList = loginNodeLinkedListInput;
+
+        // Initialize system messages
+        smInvalidLogin = "Username or password input is invalid or not found, please retry";
 
 
         // Initialize connection to DataServer TODO
@@ -78,6 +83,18 @@ public class HandleInterface {
         return accountIndex;
     }
 
+    // Returns encoded login fail message using login key
+    public String getEncryptedLoginFail() {
+        return keyEncoding(smInvalidLogin, loginKey);
+    }
+
+    public InetAddress getClientAddress() {
+        return clientAddress;
+    }
+
+    public int getClientPort() {
+        return clientPort;
+    }
 
     /**
      * Method: keyEncoding, Method receives a message to encrypt and a key to encrypt it with. Message will be
