@@ -98,6 +98,11 @@ public class Client {
 
                 if (itemIndexInput != -2 && itemIndexInput != -1) {
                     // itemIndex is valid
+                    // Output item details
+
+
+                    // Prompt for quantity
+                    System.out.print("Enter");
 
                 } else if (itemIndexInput == -1) {
                     // itemIndex is for catalog
@@ -107,7 +112,7 @@ public class Client {
 
                 }
 
-                // Check if user has choosen 1 item yet then set flag state
+                // Check if user has chosen 1 item yet then set flag state, false if user has not chosen yet
                 if (___) {
                     itemSelectionFlag = true;
                 }
@@ -150,6 +155,11 @@ public class Client {
 
         // Return output string
         return itemListString;
+    }
+
+    private static String createItemDetailsFromIndex(int indexNumber, String[] itemListInput) {
+
+
     }
 
     /**
