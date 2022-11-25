@@ -22,7 +22,7 @@ public class itemEntryNode {
         priceTotal = 0;
     }
 
-    void UpdatePriceTotalFromQuantity(double quantityInput) {
+    void updatePriceTotalFromQuantity(int quantityInput) {
         priceTotal += price * quantityInput;
         quantity += quantityInput;
     }
@@ -39,4 +39,11 @@ public class itemEntryNode {
         return price;
     }
 
+    public double getPriceTotal() {
+        return priceTotal;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
 }

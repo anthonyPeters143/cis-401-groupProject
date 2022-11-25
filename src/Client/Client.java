@@ -88,7 +88,7 @@ public class Client {
             clientSocket.receive(receivingPacket);
             itemSplitInput = Arrays.toString(receivingPacket.getData()).split("\n");
             itemEntryNodeLinkedList = createItemEntries(itemSplitInput);
-            itemListString = createItemListPrompt(itemSplitInput);
+            itemListString = createItemListPrompt(itemEntryNodeLinkedList);
 
             // Prompt and loop till user chooses at least 1 item from InterfaceServer itemList
             System.out.println(itemListString);
@@ -103,14 +103,17 @@ public class Client {
                 if (itemIndexInput != -2 && itemIndexInput != -1) {
                     // itemIndex is valid
                     // Output item details
-                    createItemEntryFromIndex(itemIndexInput, itemSplitInput);
+                    createItemEntryFromIndexNumber(itemIndexInput, itemEntryNodeLinkedList);
 
                     // Prompt for quantity
                     System.out.print("Enter desired quantity : ");
                     itemQuantityInput = Integer.parseInt(input.next().trim());
 
-                    // Display price and quantity
+                    // Add quantity and priceTotal to choose item entry
+                    itemEntryNodeLinkedList.get(itemIndexInput - 1).updatePriceTotalFromQuantity(itemQuantityInput);
 
+                    // Display updated details
+                    createItemEntryFromIndexNumber(itemIndexInput, itemEntryNodeLinkedList);
 
                 } else if (itemIndexInput == -1) {
                     // itemIndex is for catalog
@@ -121,9 +124,10 @@ public class Client {
                 }
 
                 // Check if user has chosen 1 item yet then set flag state, false if user has not chosen yet
-                if (___) {
-                    itemSelectionFlag = true;
-                }
+                // TODO
+//                if (___) {
+//                    itemSelectionFlag = true;
+//                }
 
             } while (itemSelectionFlag);
 
@@ -171,9 +175,9 @@ public class Client {
         for (int index = 0; index < itemListLinkedList.size() - 1; index++) {
             // Add item's indexNumber, name, and price
             itemListString = itemListString.concat(
-                    itemListLinkedList.get(0).getIndexNumber() + "\t" +
-                            itemListLinkedList.get(0).getName() + "\t" +
-                            itemListLinkedList.get(0).getPrice() + "\n");
+                    itemListLinkedList.get(index - 1).getIndexNumber() + "\t" +
+                            itemListLinkedList.get(index - 1).getName() + "\t" +
+                            itemListLinkedList.get(index - 1).getPrice() + "\n");
         }
 
         // Return output string
@@ -185,10 +189,12 @@ public class Client {
         String itemEntryString = "Item's\tIndexNumber\tName\tPrice\n";
         String[] itemEntry;
 
-        // Create item details string from item indexNumber - 1 due to different in starting numbers
-        itemEntryString = itemEntryString.concat("\t" + itemListLinkedList.get(indexNumber).getIndexNumber() + "\t" +
-                itemListLinkedList.get(indexNumber).getName() + "\t" +
-                itemListLinkedList.get(indexNumber).getPrice() + "\t");
+        // Create item details (name, price, quantity, and priceTotal) string
+        // from item indexNumber - 1 due to different in starting numbers
+        itemEntryString = itemEntryString.concat("\t" + itemListLinkedList.get(indexNumber).getName() + "\t" +
+                itemListLinkedList.get(indexNumber).getPrice() + "\t" +
+                itemListLinkedList.get(indexNumber).getQuantity() + "\t" +
+                itemListLinkedList.get(indexNumber).getPriceTotal());
 
         return itemEntryString;
     }
