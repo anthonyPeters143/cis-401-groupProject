@@ -14,11 +14,11 @@ public class Client {
         int interfaceServerPort,
                 loginKey, paymentKey,
                 userAccountKey,
-                itemIndexInput;
+                itemIndexInput, itemQuantityInput;
         boolean inputValidFlag = false, loginConfirmationFlag = false, itemSelectionFlag = false;
         String usernameInput = "", passwordInput = "", encryptedSignIn,
                 itemListString;
-        String[] splitInput;
+        String[] loginSplitInput, itemSplitInput;
 
         DatagramPacket sendingPacket, receivingPacket  = new DatagramPacket(dataBuffer, dataBuffer.length);;
         DatagramSocket clientSocket;
@@ -72,19 +72,19 @@ public class Client {
                 clientSocket.receive(receivingPacket);
 
                 // Split by "_", decode, and store received confirmation and paymentKey
-                splitInput = new String(receivingPacket.getData()).trim().split("_");
-                if (Integer.parseInt(keyDecoding(splitInput[0], loginKey)) == 1) {
+                loginSplitInput = new String(receivingPacket.getData()).trim().split("_");
+                if (Integer.parseInt(keyDecoding(loginSplitInput[0], loginKey)) == 1) {
                     loginConfirmationFlag = true;
                 }
-                userAccountKey = Integer.parseInt(keyDecoding(splitInput[1], loginKey));
+                userAccountKey = Integer.parseInt(keyDecoding(loginSplitInput[1], loginKey));
 
             // Check if confirmation is true
             } while (!loginConfirmationFlag);
 
             // Receive, separate by "\n" then ":", and store itemList data as itemListString
             clientSocket.receive(receivingPacket);
-            splitInput = Arrays.toString(receivingPacket.getData()).split("\n");
-            itemListString = createItemListPrompt(splitInput);
+            itemSplitInput = Arrays.toString(receivingPacket.getData()).split("\n");
+            itemListString = createItemListPrompt(itemSplitInput);
 
             // Prompt and loop till user chooses at least 1 item from InterfaceServer itemList
             System.out.println(itemListString);
@@ -99,10 +99,14 @@ public class Client {
                 if (itemIndexInput != -2 && itemIndexInput != -1) {
                     // itemIndex is valid
                     // Output item details
-
+                    createItemEntryFromIndex(itemIndexInput, itemSplitInput);
 
                     // Prompt for quantity
-                    System.out.print("Enter");
+                    System.out.print("Enter desired quantity : ");
+                    itemQuantityInput = Integer.parseInt(input.next().trim());
+
+                    // Display price and quantity
+
 
                 } else if (itemIndexInput == -1) {
                     // itemIndex is for catalog
@@ -126,6 +130,7 @@ public class Client {
             System.out.println("TESTING DONE");
 
             // Prompt user for payment input
+
 
             // Output conformation to user
 
@@ -157,9 +162,18 @@ public class Client {
         return itemListString;
     }
 
-    private static String createItemDetailsFromIndex(int indexNumber, String[] itemListInput) {
+    private static String createItemEntryFromIndex(int indexNumber, String[] itemListInput) {
+        // Initialize String
+        String itemEntryString = "Item's\tIndexNumber\tName\tPrice\n";
+        String[] itemEntry;
 
+        // Create item details string from item indexNumber - 1 due to different in starting numbers
+        itemEntry = itemListInput[indexNumber - 1].split(":");
+        itemEntryString = itemEntryString.concat("\t" + itemEntry[0] + "\t" +
+                itemEntry[1] + "\t" +
+                itemEntry[2] + "\t");
 
+        return itemEntryString;
     }
 
     /**
