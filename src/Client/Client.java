@@ -5,6 +5,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.Scanner;
 
 public class Client {
@@ -19,6 +20,8 @@ public class Client {
         String usernameInput = "", passwordInput = "", encryptedSignIn,
                 itemListString;
         String[] loginSplitInput, itemSplitInput;
+
+        LinkedList<itemEntryNode> itemEntryNodeLinkedList = new LinkedList<itemEntryNode>();
 
         DatagramPacket sendingPacket, receivingPacket  = new DatagramPacket(dataBuffer, dataBuffer.length);;
         DatagramSocket clientSocket;
@@ -84,6 +87,7 @@ public class Client {
             // Receive, separate by "\n" then ":", and store itemList data as itemListString
             clientSocket.receive(receivingPacket);
             itemSplitInput = Arrays.toString(receivingPacket.getData()).split("\n");
+            itemEntryNodeLinkedList = createItemEntries(itemSplitInput);
             itemListString = createItemListPrompt(itemSplitInput);
 
             // Prompt and loop till user chooses at least 1 item from InterfaceServer itemList
@@ -139,39 +143,52 @@ public class Client {
             throw new RuntimeException(e);
         } catch (Exception exception) {}
 
-}
+    }
 
-    private static String createItemListPrompt(String[] itemListInput) {
-        // Initialize String
-        String itemListString = "IndexNumber:Name:Price\n";
+    private static LinkedList<itemEntryNode> createItemEntries(String[] itemListInput) {
         String[] itemEntry;
+        LinkedList<itemEntryNode> itemListLinkedList = new LinkedList<itemEntryNode>();
 
         // Loop through itemList attaching item as pattern "indexNumber-"
         for (int index = 0; index < itemListInput.length - 1; index++) {
             // Split each entry by ":" characters
             itemEntry = itemListInput[index].split(":");
 
+            // Add item's indexNumber, name, and price to itemEntryNode
+            itemListLinkedList.add(new itemEntryNode(Integer.parseInt(itemEntry[0]),
+                    itemEntry[1],
+                    Double.parseDouble(itemEntry[2])));
+        }
+
+        return itemListLinkedList;
+    }
+
+    private static String createItemListPrompt(LinkedList<itemEntryNode> itemListLinkedList) {
+        // Initialize String
+        String itemListString = "IndexNumber\tName\tPrice\n";
+
+        // Loop through itemList attaching items as pattern "indexNumber    name    price"
+        for (int index = 0; index < itemListLinkedList.size() - 1; index++) {
             // Add item's indexNumber, name, and price
             itemListString = itemListString.concat(
-                    itemEntry[0] + ":" +
-                            itemEntry[1] + ":" +
-                            itemEntry[2] + "\n");
+                    itemListLinkedList.get(0).getIndexNumber() + "\t" +
+                            itemListLinkedList.get(0).getName() + "\t" +
+                            itemListLinkedList.get(0).getPrice() + "\n");
         }
 
         // Return output string
         return itemListString;
     }
 
-    private static String createItemEntryFromIndex(int indexNumber, String[] itemListInput) {
+    private static String createItemEntryFromIndexNumber(int indexNumber, LinkedList<itemEntryNode> itemListLinkedList) {
         // Initialize String
         String itemEntryString = "Item's\tIndexNumber\tName\tPrice\n";
         String[] itemEntry;
 
         // Create item details string from item indexNumber - 1 due to different in starting numbers
-        itemEntry = itemListInput[indexNumber - 1].split(":");
-        itemEntryString = itemEntryString.concat("\t" + itemEntry[0] + "\t" +
-                itemEntry[1] + "\t" +
-                itemEntry[2] + "\t");
+        itemEntryString = itemEntryString.concat("\t" + itemListLinkedList.get(indexNumber).getIndexNumber() + "\t" +
+                itemListLinkedList.get(indexNumber).getName() + "\t" +
+                itemListLinkedList.get(indexNumber).getPrice() + "\t");
 
         return itemEntryString;
     }
