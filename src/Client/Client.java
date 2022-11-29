@@ -113,9 +113,10 @@ public class Client {
                 }
 
                 // Check if user has chosen 1 item yet then set flag state, false if user has not chosen yet
-                if (___) {
-                    itemSelectionFlag = true;
-                }
+                // TODO
+//                if (___) {
+//                    itemSelectionFlag = true;
+//                }
 
             } while (itemSelectionFlag);
 
@@ -159,7 +160,7 @@ public class Client {
 
     private static String createItemDetailsFromIndex(int indexNumber, String[] itemListInput) {
 
-
+        return "";
     }
 
     /**
