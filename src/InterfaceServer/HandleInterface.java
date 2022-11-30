@@ -134,6 +134,7 @@ public class HandleInterface {
 
     // Calls method to convert CatalogNodeLinkedList into a String, encoding using account key and returns it
     public String getPreppedItemList() {
+        // TODO SWITCH TO CREATE IN CONSTRUCTOR
         return prepItemList(catalogNodeLinkedList);
     }
 

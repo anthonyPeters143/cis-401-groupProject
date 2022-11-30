@@ -17,7 +17,8 @@ public class Client {
                 userAccountKey,
                 itemIndexInput, itemQuantityInput;
         boolean inputValidFlag = false, loginConfirmationFlag = false, itemSelectionFlag = false;
-        String usernameInput = "", passwordInput = "", encryptedSignIn,
+        String usernameInput = "", passwordInput = "",
+                encryptedSignIn, encryptedReport,
                 itemListString;
         String[] loginSplitInput, itemSplitInput;
 
@@ -46,13 +47,12 @@ public class Client {
             do {
                 do {
                     try {
-                        System.out.println("\nUsername and passwords can include: letters, numbers, and underscores\n" +
+                        System.out.print("\nUsername and passwords can include: letters, numbers, and underscores\n" +
                                 "Enter username of account: ");
                         usernameInput = input.next().trim().toUpperCase();
-                        System.out.println("Enter password of account: ");
+                        System.out.print("Enter password of account: ");
                         passwordInput = input.next().trim().toUpperCase();
-                    } catch (Exception exception) {
-                    }
+                    } catch (Exception exception) {}
 
                     // Verify username and password contain only alphanumeric and underscore characters
                     if (usernameInput.matches("\\w+") && passwordInput.matches("\\w+")) {
@@ -86,8 +86,7 @@ public class Client {
 
             // Receive, separate by "\n" then ":", and store itemList data as itemListString
             clientSocket.receive(receivingPacket);
-            itemSplitInput = Arrays.toString(receivingPacket.getData()).split("\n");
-            itemEntryNodeLinkedList = createItemEntries(itemSplitInput);
+            itemEntryNodeLinkedList = createItemEntries(new String(receivingPacket.getData()));
             itemListString = createItemListPrompt(itemEntryNodeLinkedList);
 
             // Prompt and loop till user chooses at least 1 item from InterfaceServer itemList
@@ -96,15 +95,14 @@ public class Client {
                 try {
                     System.out.print("Enter item index number or -1 for catalog : ");
                     itemIndexInput = Integer.parseInt(input.next().trim());
+
                 } catch (Exception exception) {
                     itemIndexInput = -2;
+
                 }
 
                 if (itemIndexInput != -2 && itemIndexInput != -1) {
                     // itemIndex is valid
-                    // Output item details
-                    createItemEntryFromIndexNumber(itemIndexInput, itemEntryNodeLinkedList);
-
                     // Prompt for quantity
                     System.out.print("Enter desired quantity : ");
                     itemQuantityInput = Integer.parseInt(input.next().trim());
@@ -113,26 +111,37 @@ public class Client {
                     itemEntryNodeLinkedList.get(itemIndexInput - 1).updatePriceTotalFromQuantity(itemQuantityInput);
 
                     // Display updated details
-                    createItemEntryFromIndexNumber(itemIndexInput, itemEntryNodeLinkedList);
+                    System.out.println(createItemEntryFromIndexNumber(itemIndexInput, itemEntryNodeLinkedList));
 
                 } else if (itemIndexInput == -1) {
                     // itemIndex is for catalog
+                    System.out.println(itemListString);
 
                 } else {
                     // itemIndex is invalid
+                    System.out.println("Input is invalid, please re-input");
 
                 }
 
                 // Check if user has chosen 1 item yet then set flag state, false if user has not chosen yet
                 // TODO
-//                if (___) {
-//                    itemSelectionFlag = true;
-//                }
+                if (checkIfUserPicked(itemEntryNodeLinkedList)) {
+                    System.out.print("Quit selection? (Y/N) : ");
+                    String qSelection = input.next().trim().toLowerCase();
 
-            } while (itemSelectionFlag);
+                    if (qSelection.matches("y")) {
+                        itemSelectionFlag = true;
+                    }
+                }
 
+            } while (!itemSelectionFlag);
+
+            // Create encrypted report for InterfaceServer
+            encryptedReport = keyEncoding(createItemReport(itemEntryNodeLinkedList), userAccountKey);
 
             // Send selection back InterfaceServer
+            clientSocket.send(new DatagramPacket(encryptedReport.getBytes(), encryptedReport.getBytes().length,
+                    interfaceServerAddress, interfaceServerPort));
 
             // TODO TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             System.out.println("TESTING DONE");
@@ -149,35 +158,67 @@ public class Client {
 
     }
 
-    private static LinkedList<itemEntryNode> createItemEntries(String[] itemListInput) {
-        String[] itemEntry;
+    private static String createItemReport(LinkedList<itemEntryNode> itemListLinkedList) {
+        // Initialize string
+        String itemReport = "";
+
+        // Loop through itemList attaching items in the pattern indexNumber ":" quantity "\n"
+        for (int index = 0; index < itemListLinkedList.size(); index++) {
+            itemReport = itemReport.concat(itemListLinkedList.get(index).getIndexNumber() +
+                    ":" + itemListLinkedList.get(index).getQuantity());
+
+            if (!(index == itemListLinkedList.size())) {
+                itemReport = itemReport.concat("\n");
+            }
+        }
+
+        return itemReport;
+    }
+
+    private static boolean checkIfUserPicked(LinkedList<itemEntryNode> itemListLinkedList) {
+        // Initialize counter
+        int itemCounter = 0;
+
+        // Loop through itemList counting quantities
+        for (int index = 1; index < itemListLinkedList.size(); index++) {
+            itemCounter += itemListLinkedList.get(index).getQuantity();
+        }
+
+        return itemCounter > 0;
+    }
+
+    private static LinkedList<itemEntryNode> createItemEntries(String itemListInput) {
+        String[] itemEntries, entryData;
         LinkedList<itemEntryNode> itemListLinkedList = new LinkedList<itemEntryNode>();
 
-        // Loop through itemList attaching item as pattern "indexNumber-"
-        for (int index = 0; index < itemListInput.length - 1; index++) {
-            // Split each entry by ":" characters
-            itemEntry = itemListInput[index].split(":");
+        // Split input by "\n" chars
+        itemEntries = itemListInput.split("\n");
 
-            // Add item's indexNumber, name, and price to itemEntryNode
-            itemListLinkedList.add(new itemEntryNode(Integer.parseInt(itemEntry[0]),
-                    itemEntry[1],
-                    Double.parseDouble(itemEntry[2])));
+        // Loop through itemEntries to create itemEntryNodes
+        for (int index = 0; index < itemEntries.length - 1; index++) {
+            // Split by : chars
+            entryData = itemEntries[index].split(":");
+
+            // Create itemEntryNodes from item indexNumber, name, and price
+            itemListLinkedList.add(new itemEntryNode(Integer.parseInt(entryData[0]),
+                    entryData[1], Double.parseDouble(entryData[2])));
         }
 
         return itemListLinkedList;
     }
 
+    // TODO EXCEPTION CAUSE WITHIN
     private static String createItemListPrompt(LinkedList<itemEntryNode> itemListLinkedList) {
         // Initialize String
-        String itemListString = "IndexNumber\tName\tPrice\n";
+        String itemListString = "#\tName\tPrice\n";
 
         // Loop through itemList attaching items as pattern "indexNumber    name    price"
-        for (int index = 0; index < itemListLinkedList.size() - 1; index++) {
+        for (int index = 0; index < itemListLinkedList.size(); index++) {
             // Add item's indexNumber, name, and price
             itemListString = itemListString.concat(
-                    itemListLinkedList.get(index - 1).getIndexNumber() + "\t" +
-                            itemListLinkedList.get(index - 1).getName() + "\t" +
-                            itemListLinkedList.get(index - 1).getPrice() + "\n");
+                    itemListLinkedList.get(index).getIndexNumber() + "\t" +
+                            itemListLinkedList.get(index).getName() + "\t" +
+                            itemListLinkedList.get(index).getPrice() + "\n");
         }
 
         // Return output string
@@ -186,15 +227,18 @@ public class Client {
 
     private static String createItemEntryFromIndexNumber(int indexNumber, LinkedList<itemEntryNode> itemListLinkedList) {
         // Initialize String
-        String itemEntryString = "Item's\tIndexNumber\tName\tPrice\n";
+        String itemEntryString = "";
         String[] itemEntry;
+
+        // Initialize itemEntryNode from indexNumber
+        itemEntryNode itemEntryNode = itemListLinkedList.get(indexNumber);
 
         // Create item details (name, price, quantity, and priceTotal) string
         // from item indexNumber - 1 due to different in starting numbers
-        itemEntryString = itemEntryString.concat("\t" + itemListLinkedList.get(indexNumber).getName() + "\t" +
-                itemListLinkedList.get(indexNumber).getPrice() + "\t" +
-                itemListLinkedList.get(indexNumber).getQuantity() + "\t" +
-                itemListLinkedList.get(indexNumber).getPriceTotal());
+        itemEntryString = "Name: " + itemEntryNode.getName() +
+                "\tQuantity : " + itemEntryNode.getQuantity() +
+                "\tPrice : " + itemEntryNode.getPrice() +
+                "\tItem Total : " + itemEntryNode.getPriceTotal();
 
         return itemEntryString;
     }
