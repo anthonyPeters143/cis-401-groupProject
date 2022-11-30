@@ -87,7 +87,9 @@ public class InterfaceServer {
                         userThread.getClientPort());
                 interfaceSocket.send(responsePacket);
 
-                // Wait for selection
+                // Wait for selection input
+                clientPacket = new DatagramPacket(dataBuffer, dataBuffer.length);
+                interfaceSocket.receive(clientPacket);
 
                 // Create receipt
 
