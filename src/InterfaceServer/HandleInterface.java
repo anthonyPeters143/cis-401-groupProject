@@ -103,6 +103,9 @@ public class HandleInterface {
             catalogNodeLinkedList.get(Integer.parseInt(itemSelectionEntry[0])).
                     updatePriceTotalFromQuantity(Integer.parseInt(itemSelectionEntry[1]));
         }
+
+        // Update receipt
+        createReceipt();
     }
 
     // Attempt to log in into account using username and password, encoded using loginKey value. Will decrypt inputs

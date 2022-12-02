@@ -96,7 +96,7 @@ public class InterfaceServer {
                 userThread.updateSelection();
 
                 // Create receipt
-                userThread.getUserReceipt();
+                System.out.print(userThread.getUserReceipt());
 
                 // Wait for encrypted creditData
 

@@ -16,7 +16,7 @@ public class Client {
                 loginKey, paymentKey,
                 userAccountKey,
                 itemIndexInput, itemQuantityInput;
-        boolean inputValidFlag = false, loginConfirmationFlag = false, itemSelectionFlag = false;
+        boolean inputValidFlag = false, loginConfirmationFlag = false, itemSelectionFlag = false, quitSelectionFlag = false;
         String usernameInput = "", passwordInput = "",
                 encryptedSignIn,
                 encryptedReport, decryptedReport,
@@ -112,7 +112,7 @@ public class Client {
                     itemEntryNodeLinkedList.get(itemIndexInput - 1).updatePriceTotalFromQuantity(itemQuantityInput);
 
                     // Display updated details
-                    System.out.println(createItemEntryFromIndexNumber(itemIndexInput, itemEntryNodeLinkedList));
+                    System.out.println(createItemEntryFromIndexNumber(itemIndexInput - 1, itemEntryNodeLinkedList));
 
                 } else if (itemIndexInput == -1) {
                     // itemIndex is for catalog
@@ -125,14 +125,31 @@ public class Client {
                 }
 
                 // Check if user has chosen 1 item yet then set flag state, false if user has not chosen yet
-                // TODO
                 if (checkIfUserPicked(itemEntryNodeLinkedList)) {
-                    System.out.print("Quit selection? (Y/N) : ");
-                    String qSelection = input.next().trim().toLowerCase();
 
-                    if (qSelection.matches("y")) {
-                        itemSelectionFlag = true;
-                    }
+
+                    do {
+                        // Prompt user if they want to quit
+                        System.out.print("Quit selection? (Y/N) : ");
+                        String qSelection = input.next().trim().toLowerCase();
+
+                        if (qSelection.matches("y")) {
+                            // Input valid, user wants to quit
+                            // Set flags
+                            quitSelectionFlag = true;
+                            itemSelectionFlag = true;
+
+                        } if (qSelection.matches("n")) {
+                            // Input valid, user doesn't want to quit
+                            // Set flag
+                            quitSelectionFlag = true;
+
+                        } else {
+                            // Input invalid
+                            System.out.println("Input is invalid, please re-input");
+                        }
+
+                    } while (!quitSelectionFlag);
                 }
 
             } while (!itemSelectionFlag);
@@ -181,8 +198,8 @@ public class Client {
         // Initialize counter
         int itemCounter = 0;
 
-        // Loop through itemList counting quantities
-        for (int index = 1; index < itemListLinkedList.size(); index++) {
+        // Loop through itemList increasing quantities counter
+        for (int index = 0; index < itemListLinkedList.size(); index++) {
             itemCounter += itemListLinkedList.get(index).getQuantity();
         }
 
@@ -241,8 +258,8 @@ public class Client {
         // Create item details (name, price, quantity, and priceTotal) string
         // from item indexNumber - 1 due to different in starting numbers
         itemEntryString = "Name: " + itemEntryNode.getName() +
-                "\tQuantity : " + itemEntryNode.getQuantity() +
-                "\tPrice : " + itemEntryNode.getPrice() +
+                "\t\tQuantity : " + itemEntryNode.getQuantity() +
+                "\t\tPrice : " + itemEntryNode.getPrice() +
                 "\t\tItem Total : " + itemEntryNode.getPriceTotal();
 
         return itemEntryString;
