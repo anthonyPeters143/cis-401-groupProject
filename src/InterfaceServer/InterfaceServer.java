@@ -87,9 +87,16 @@ public class InterfaceServer {
                         userThread.getClientPort());
                 interfaceSocket.send(responsePacket);
 
-                // Wait for selection
+                // Wait for selection input
+                clientPacket = new DatagramPacket(dataBuffer, dataBuffer.length);
+                interfaceSocket.receive(clientPacket);
+
+                // Update client packet selection
+                userThread.updateClientPacket(clientPacket);
+                userThread.updateSelection();
 
                 // Create receipt
+                userThread.getUserReceipt();
 
                 // Wait for encrypted creditData
 

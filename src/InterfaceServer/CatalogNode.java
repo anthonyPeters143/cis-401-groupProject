@@ -8,8 +8,8 @@ package InterfaceServer;
  */
 
 public class CatalogNode {
-    private int indexNumber;
-    private double price;
+    private int indexNumber, quantity;
+    private double price, priceTotal;
     private String name;
 
     /**
@@ -24,6 +24,13 @@ public class CatalogNode {
         indexNumber = indexNumberInput;
         price = priceInput;
         name = nameInput;
+        quantity = 0;
+        priceTotal = 0;
+    }
+
+    void updatePriceTotalFromQuantity(int quantityInput) {
+        priceTotal += price * quantityInput;
+        quantity += quantityInput;
     }
 
     /**
@@ -51,6 +58,14 @@ public class CatalogNode {
      */
     public String getName() {
         return name;
+    }
+
+    public double getPriceTotal() {
+        return priceTotal;
+    }
+
+    public int getQuantity() {
+        return quantity;
     }
 
 }
