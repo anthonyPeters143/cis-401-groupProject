@@ -18,7 +18,8 @@ public class Client {
                 itemIndexInput, itemQuantityInput;
         boolean inputValidFlag = false, loginConfirmationFlag = false, itemSelectionFlag = false;
         String usernameInput = "", passwordInput = "",
-                encryptedSignIn, encryptedReport,
+                encryptedSignIn,
+                encryptedReport, decryptedReport,
                 itemListString;
         String[] loginSplitInput, itemSplitInput;
 
@@ -137,10 +138,11 @@ public class Client {
             } while (!itemSelectionFlag);
 
             // Create encrypted report for InterfaceServer
-            encryptedReport = keyEncoding(createItemReport(itemEntryNodeLinkedList), userAccountKey);
+//            encryptedReport = keyEncoding(createItemReport(itemEntryNodeLinkedList), userAccountKey);
+            decryptedReport = createItemReport(itemEntryNodeLinkedList);
 
             // Send selection back InterfaceServer
-            clientSocket.send(new DatagramPacket(encryptedReport.getBytes(), encryptedReport.getBytes().length,
+            clientSocket.send(new DatagramPacket(decryptedReport.getBytes(), decryptedReport.getBytes().length,
                     interfaceServerAddress, interfaceServerPort));
 
             // TODO TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -207,18 +209,21 @@ public class Client {
         return itemListLinkedList;
     }
 
-    // TODO EXCEPTION CAUSE WITHIN
     private static String createItemListPrompt(LinkedList<itemEntryNode> itemListLinkedList) {
         // Initialize String
         String itemListString = "#\tName\tPrice\n";
+        itemEntryNode itemEntryNode;
 
         // Loop through itemList attaching items as pattern "indexNumber    name    price"
         for (int index = 0; index < itemListLinkedList.size(); index++) {
+            // Set node
+            itemEntryNode = itemListLinkedList.get(index);
+
             // Add item's indexNumber, name, and price
             itemListString = itemListString.concat(
-                    itemListLinkedList.get(index).getIndexNumber() + "\t" +
-                            itemListLinkedList.get(index).getName() + "\t" +
-                            itemListLinkedList.get(index).getPrice() + "\n");
+                    itemEntryNode.getIndexNumber() + "\t" +
+                            itemEntryNode.getName() + "\t" +
+                            itemEntryNode.getPrice() + "\n");
         }
 
         // Return output string
@@ -238,7 +243,7 @@ public class Client {
         itemEntryString = "Name: " + itemEntryNode.getName() +
                 "\tQuantity : " + itemEntryNode.getQuantity() +
                 "\tPrice : " + itemEntryNode.getPrice() +
-                "\tItem Total : " + itemEntryNode.getPriceTotal();
+                "\t\tItem Total : " + itemEntryNode.getPriceTotal();
 
         return itemEntryString;
     }

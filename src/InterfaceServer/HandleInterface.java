@@ -9,8 +9,14 @@ public class HandleInterface {
     int loginKey,
         clientPort, interfaceSeverPort, dataServerPort,
         accountKey;
+
+    double userTotal;
+
+    String userReceipt;
+
     String usernameEncrypted, usernameDecrypted,
-            passwordEncrypted, passwordDecrypted;
+            passwordEncrypted, passwordDecrypted,
+            selectionEncrypted, getSelectionEncrypted;
 
     String smInvalidLogin;
 
@@ -41,6 +47,64 @@ public class HandleInterface {
 
     }
 
+    public void createReceipt() {
+        // Initialize string with header
+        String receipt = "User Receipt\n#\tName\tPrice\tQuantity\tItem Total\n";
+        CatalogNode catalogNode;
+
+        // Loop through catalogNode concatting string containing item's: indexNumber, name,
+        // price, quantity, and item total
+        for (int index = 0; index < catalogNodeLinkedList.size(); index++) {
+            // Set catalogNode
+            catalogNode = catalogNodeLinkedList.get(index);
+
+            receipt = receipt.concat(
+                    catalogNode.getIndexNumber() + "\t" +
+                            catalogNode.getName() + "\t" +
+                            catalogNode.getPrice() + "\t\t" +
+                            catalogNode.getQuantity() + "\t$" +
+                            catalogNode.getPrice());
+
+        }
+
+        // Find total
+        userTotal = updateTotal();
+
+        // Add total
+        receipt = receipt.concat("\tTotal : $" + userTotal);
+
+        userReceipt = receipt;
+    }
+
+    private double updateTotal() {
+        // Initialize total counter
+        double totalCounter = 0;
+
+        // Loop through list to add to counter
+        for (int index = 0; index < catalogNodeLinkedList.size(); index++) {
+            totalCounter += catalogNodeLinkedList.get(index).getPrice();
+        }
+
+        return totalCounter;
+    }
+
+    public void updateSelection() {
+        // Create string from packet data, Split by "\n" to separate index entries
+        String[] itemSelectionString = new String(clientPacket.getData()).split("\n");
+//                keyDecoding(new String(clientPacket.getData()),accountKey).split("\n");
+        String[] itemSelectionEntry;
+
+        // Loop through array of index entries adding quantities to entries nodes
+        for (int index = 0; index < itemSelectionString.length; index++) {
+            // Split by ":" to separate indexNumber from quantity
+            itemSelectionEntry = itemSelectionString[index].split(":");
+
+            // Add quantities and totals to item nodes
+            catalogNodeLinkedList.get(Integer.parseInt(itemSelectionEntry[0])).
+                    updatePriceTotalFromQuantity(Integer.parseInt(itemSelectionEntry[1]));
+        }
+    }
+
     // Attempt to log in into account using username and password, encoded using loginKey value. Will decrypt inputs
     // then check if inputs match any LoginNodes. If found to match then accountKey will be recorded for later use.
     public boolean login() {
@@ -60,6 +124,7 @@ public class HandleInterface {
         if (usernameDecrypted != null && passwordDecrypted != null) {
             // Try login with username and password and set accountKey
             if (attemptLogin(usernameDecrypted, passwordDecrypted) != -1) {
+
                 return true;
             }
         }
@@ -108,6 +173,8 @@ public class HandleInterface {
         return keyEncoding(loginResult, loginKey);
     }
 
+
+
     // Loops through CatalogNodeLinkedList and creates a string including indexNumber, name, and price. Will use
     // pattern indexNumber + ":" + name + ":" + price "\n", will skip new line on last line.
     private static String prepItemList(LinkedList<CatalogNode> itemList) {
@@ -130,6 +197,10 @@ public class HandleInterface {
 
         // Return output string
         return itemListOutput;
+    }
+
+    public String getUserReceipt() {
+        return userReceipt;
     }
 
     // Calls method to convert CatalogNodeLinkedList into a String, encoding using account key and returns it

@@ -91,10 +91,12 @@ public class InterfaceServer {
                 clientPacket = new DatagramPacket(dataBuffer, dataBuffer.length);
                 interfaceSocket.receive(clientPacket);
 
-                // Decode selection
-
+                // Update client packet selection
+                userThread.updateClientPacket(clientPacket);
+                userThread.updateSelection();
 
                 // Create receipt
+                userThread.getUserReceipt();
 
                 // Wait for encrypted creditData
 
