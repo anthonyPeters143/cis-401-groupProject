@@ -16,16 +16,19 @@ public class Client {
                 loginKey, paymentKey,
                 userAccountKey,
                 itemListSize,
-                itemIndexInput, itemQuantityInput,
-                creditCardNumberInput;
+                itemIndexInput, itemQuantityInput;
         boolean inputValidFlag = false, loginConfirmationFlag = false, itemSelectionFlag = false,
-                quitSelectionFlag = false, paymentInputFlag = false;
+                quitSelectionFlag = false,
+                creditCardInputFlag = false, securityCodeInputFlag = false,
+                paymentValidFlag = false;
         double receiptTotal;
         String usernameInput = "", passwordInput = "",
                 encryptedSignIn,
                 encryptedReport, decryptedReport,
                 itemListString,
-                receiptString;
+                receiptString,
+                decryptedCreditCard, decryptedSecurityCode,
+                encryptedPayment;
         String[] loginSplitInput, itemSplitInput;
 
         LinkedList<itemEntryNode> itemEntryNodeLinkedList = new LinkedList<itemEntryNode>();
@@ -41,10 +44,11 @@ public class Client {
         // Connect to interface server for user verification
         try {
             // Set up connection variables for interfaceServer at IP address "___" and port number "___"
-            clientSocket = new DatagramSocket();
-            //TODO CHANGE TO INTERFACE SERVER ADDRESS
+
+            // TODO CHANGE TO INTERFACE SERVER ADDRESS
             interfaceServerAddress = InetAddress.getByName("localhost");
             interfaceServerPort = 3000;
+            clientSocket = new DatagramSocket();
 
             // Set loginKey to default (4)
             loginKey = 4;
@@ -177,37 +181,73 @@ public class Client {
             receiptString = (createReceipt(new String(receivingPacket.getData())));
             receiptTotal = findReceiptTotal(receiptString);
 
+            // TODO TESTING DOWN FROM HERE
             // Prompt user for payment input, loop till valid
             do {
                 do {
-                try {
+                    try {
                     // Output total and prompt
                     System.out.print("Enter credit card number (16 digits) : ");
-                    creditCardNumberInput = Integer.parseInt(input.next().trim());
+                    decryptedCreditCard = input.next().trim();
+
+                    // Check if input is exactly 16 digits
+                    if (!(decryptedCreditCard).matches("\\d{16}")) {
+                        // Input invalid
+                        decryptedCreditCard = "-1";
+                    }
 
                 } catch (Exception exception) {
-                    creditCardNumberInput = -1;
-
+                    // Input invalid
+                    decryptedCreditCard = "-1";
                 }
 
-                // Check length TODO
-
                 // Check input validity
-                paymentInputFlag = creditCardNumberInput != -1;
+                creditCardInputFlag = !decryptedCreditCard.equals("-1");
 
-                } while (!paymentInputFlag);
+                } while (!creditCardInputFlag);
 
-                // Input valid
+                do {
+                    try {
+                    // Output total and prompt
+                    System.out.print("Enter security code (3 digits) : ");
+                    decryptedSecurityCode = input.next().trim();
+
+                    // Check if input is exactly 3 digits
+                    if (!(decryptedSecurityCode).matches("\\d{3}")) {
+                        // Input invalid
+                        decryptedSecurityCode = "-1";
+                    }
+
+                } catch (Exception exception) {
+                    // Input invalid
+                    decryptedSecurityCode = "-1";
+                }
+
+                // Check securityCode input validity
+                securityCodeInputFlag = !decryptedSecurityCode.equals("-1");
+
+                } while (!securityCodeInputFlag);
+
+                // Input valid, encrypt data
+                encryptedPayment = keyEncoding(decryptedCreditCard + "-" + decryptedSecurityCode, userAccountKey);
 
                 // Send payment data to interface server
+                clientSocket.send(new DatagramPacket(encryptedPayment.getBytes(), encryptedPayment.getBytes().length,
+                        interfaceServerAddress, interfaceServerPort));
 
                 // Receive conformation
+                clientSocket.receive(receivingPacket);
 
-                // Set paymentValidFlag
+                // Check if payment input is valid
+                if (new String(receivingPacket.getData()).matches("1")) {
+                    // Set paymentValidFlag
+                    paymentValidFlag = true;
+                }
 
             } while (paymentValidFlag);
 
             // Output conformation to user
+            System.out.println("Order complete");
 
 
         } catch (UnknownHostException e) {

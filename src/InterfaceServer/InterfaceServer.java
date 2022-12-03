@@ -1,22 +1,32 @@
 package InterfaceServer;
 
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.util.LinkedList;
 import java.util.Scanner;
 
 public class InterfaceServer {
     public static void main(String[] args) throws FileNotFoundException {
         // Initialize variables
-        int serverPort = 3000;
+        int clientPort = 3000, dataServerPort = 3001;
         int loginKey;
         byte[] dataBuffer = new byte[65535];
-        boolean loginValid = false;
-//        String loginFileName = "login.txt";
-        DatagramPacket clientPacket, responsePacket, DataServerPacket;
-        DatagramSocket interfaceSocket;
+        boolean loginValid = false, paymentValidFlag = false;
+
+        String dataLogin;
+
+
+        InetAddress dataServerAddress;
+        PrintWriter dataServerOut;
+        BufferedReader dataServerIn;
+
+        DatagramPacket clientPacket, clientResponsePacket,
+                dataServerPacket, dataServerResponsePacket;
+        DatagramSocket clientSocket;
+        Socket dataServerSocket;
         LinkedList<LoginNode> loginNodeLinkedList;
         LinkedList<CatalogNode> itemListLinkedList;
 
@@ -30,8 +40,15 @@ public class InterfaceServer {
         loginKey = 4;
 
         try {
-            // Set up socket connection with server port
-            interfaceSocket = new DatagramSocket(serverPort);
+            // Set up TCP socket connection and scanners
+            // TODO CHANGE TO DATA SERVER ADDRESS
+            dataServerAddress = InetAddress.getByName("localhost");
+            dataServerSocket = new Socket(dataServerAddress.getHostAddress(),dataServerPort);
+            dataServerOut = new PrintWriter(dataServerSocket.getOutputStream(), true);
+            dataServerIn = new BufferedReader(new InputStreamReader(dataServerSocket.getInputStream()));
+
+            // Set up UDP socket connection with server port
+            clientSocket = new DatagramSocket(clientPort);
 
             // Start thread loop
             while (true) {
@@ -40,13 +57,13 @@ public class InterfaceServer {
 
                 // Create packet using dataBuffer and accept socket connection
                 clientPacket = new DatagramPacket(dataBuffer, dataBuffer.length);
-                interfaceSocket.receive(clientPacket);
+                clientSocket.receive(clientPacket);
 
                 // Output busy message
                 System.out.println("Connection busy");
 
                 // Create and run login on user thread
-                userThread = new HandleInterface(clientPacket, loginKey, interfaceSocket,
+                userThread = new HandleInterface(clientPacket, loginKey, clientSocket,
                         loginNodeLinkedList, itemListLinkedList);
 
                 // Loop till login input is valid
@@ -60,14 +77,14 @@ public class InterfaceServer {
                         dataBuffer = new byte[65535];
 
                         // Send back encrypted invalidation conformation to client
-                        responsePacket = new DatagramPacket(userThread.getLoginResult(false).getBytes(),
+                        clientResponsePacket = new DatagramPacket(userThread.getLoginResult(false).getBytes(),
                                 userThread.getLoginResult(false).length(), userThread.getClientAddress(),
                                 userThread.getClientPort());
-                        interfaceSocket.send(responsePacket);
+                        clientSocket.send(clientResponsePacket);
 
                         // Wait for new input
                         clientPacket = new DatagramPacket(dataBuffer, dataBuffer.length);
-                        interfaceSocket.receive(clientPacket);
+                        clientSocket.receive(clientPacket);
 
                         // Update client packet
                         userThread.updateClientPacket(clientPacket);
@@ -75,39 +92,66 @@ public class InterfaceServer {
 
                 } while (!loginValid);
 
+                // TODO TESTING FROM HERE DOWN
+                // Update login to DataServer
+                dataLogin = userThread.getDataLogin();
+                dataServerOut.println(dataLogin);
+
                 // Send back conformation of input
-                responsePacket = new DatagramPacket(userThread.getLoginResult(true).getBytes(),
+                clientResponsePacket = new DatagramPacket(userThread.getLoginResult(true).getBytes(),
                         userThread.getLoginResult(true).length(), userThread.getClientAddress(),
                         userThread.getClientPort());
-                interfaceSocket.send(responsePacket);
+                clientSocket.send(clientResponsePacket);
 
                 // Send list of items back to client
-                responsePacket = new DatagramPacket(userThread.getPreppedItemList().getBytes(),
+                clientResponsePacket = new DatagramPacket(userThread.getPreppedItemList().getBytes(),
                         userThread.getPreppedItemList().length(), userThread.getClientAddress(),
                         userThread.getClientPort());
-                interfaceSocket.send(responsePacket);
+                clientSocket.send(clientResponsePacket);
 
                 // Wait for selection input
                 clientPacket = new DatagramPacket(dataBuffer, dataBuffer.length);
-                interfaceSocket.receive(clientPacket);
+                clientSocket.receive(clientPacket);
 
                 // Update client packet selection
                 userThread.updateClientPacket(clientPacket);
                 userThread.updateSelection();
 
                 // Send receipt back client
-                responsePacket = new DatagramPacket(userThread.getUserReceipt().getBytes(),
+                clientResponsePacket = new DatagramPacket(userThread.getUserReceipt().getBytes(),
                         userThread.getUserReceipt().length(), userThread.getClientAddress(),
                         userThread.getClientPort());
-                interfaceSocket.send(responsePacket);
+                clientSocket.send(clientResponsePacket);
 
-//                // Wait for ___ input
-//                clientPacket = new DatagramPacket(dataBuffer, dataBuffer.length);
-//                interfaceSocket.receive(clientPacket);
+                // Loop till paymentInput is valid
+                do {
+                    // Wait for encryptedPayment input
+                    clientPacket = new DatagramPacket(dataBuffer, dataBuffer.length);
+                    clientSocket.receive(clientPacket);
 
-                // Wait for encrypted creditData
+                    // TODO TEST IF BROKE
+                    // Forward encrypted creditData to DataServer
+                    dataServerOut.println(new String(clientPacket.getData()));
 
-                // Forward encrypted creditData to DataServer
+                    if (dataServerIn.readLine().matches("1")) {
+                        // Input valid
+                        // Set flag
+                        paymentValidFlag = true;
+
+                        // Send conformation of valid payment to client
+                        clientResponsePacket = new DatagramPacket("1".getBytes(), "1".length(),
+                                userThread.getClientAddress(), userThread.getClientPort());
+                        clientSocket.send(clientResponsePacket);
+
+                    } else {
+                        // Input invalid
+                        // Send conformation of invalid payment to client
+                        clientResponsePacket = new DatagramPacket("0".getBytes(), "0".length(),
+                                userThread.getClientAddress(), userThread.getClientPort());
+                        clientSocket.send(clientResponsePacket);
+                    }
+
+                } while (!paymentValidFlag);
 
                 // Receive conformation of payment
 

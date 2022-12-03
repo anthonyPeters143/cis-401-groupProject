@@ -47,6 +47,11 @@ public class HandleInterface {
 
     }
 
+
+    public String getDataLogin() {
+        return usernameDecrypted + ":" + passwordDecrypted;
+    }
+
     public void createReceipt() {
         // Initialize string with header
         String receipt = "User Receipt\n#\tName\tPrice\tQuant\tItem Total\n";
@@ -128,7 +133,7 @@ public class HandleInterface {
         if (usernameDecrypted != null && passwordDecrypted != null) {
             // Try login with username and password and set accountKey
             if (attemptLogin(usernameDecrypted, passwordDecrypted) != -1) {
-
+                // Input valid
                 return true;
             }
         }
