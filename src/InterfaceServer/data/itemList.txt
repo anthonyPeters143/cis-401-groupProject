@@ -1,6 +1,6 @@
 1:Bacon:3.00
 2:Milk:3.50
-3:Eggs:2.25
+3:Eggs:2.50
 4:Pizza:3.00
 5:Coffee:5.00
 6:Salt:1.50

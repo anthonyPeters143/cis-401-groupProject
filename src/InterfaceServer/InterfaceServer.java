@@ -95,12 +95,21 @@ public class InterfaceServer {
                 userThread.updateClientPacket(clientPacket);
                 userThread.updateSelection();
 
-                // Create receipt
-                System.out.print(userThread.getUserReceipt());
+                // Send receipt back client
+                responsePacket = new DatagramPacket(userThread.getUserReceipt().getBytes(),
+                        userThread.getUserReceipt().length(), userThread.getClientAddress(),
+                        userThread.getClientPort());
+                interfaceSocket.send(responsePacket);
+
+//                // Wait for ___ input
+//                clientPacket = new DatagramPacket(dataBuffer, dataBuffer.length);
+//                interfaceSocket.receive(clientPacket);
 
                 // Wait for encrypted creditData
 
                 // Forward encrypted creditData to DataServer
+
+                // Receive conformation of payment
 
                 // Forward conformation of creditData to client
 

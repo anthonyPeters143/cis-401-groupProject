@@ -15,12 +15,17 @@ public class Client {
         int interfaceServerPort,
                 loginKey, paymentKey,
                 userAccountKey,
-                itemIndexInput, itemQuantityInput;
-        boolean inputValidFlag = false, loginConfirmationFlag = false, itemSelectionFlag = false, quitSelectionFlag = false;
+                itemListSize,
+                itemIndexInput, itemQuantityInput,
+                creditCardNumberInput;
+        boolean inputValidFlag = false, loginConfirmationFlag = false, itemSelectionFlag = false,
+                quitSelectionFlag = false, paymentInputFlag = false;
+        double receiptTotal;
         String usernameInput = "", passwordInput = "",
                 encryptedSignIn,
                 encryptedReport, decryptedReport,
-                itemListString;
+                itemListString,
+                receiptString;
         String[] loginSplitInput, itemSplitInput;
 
         LinkedList<itemEntryNode> itemEntryNodeLinkedList = new LinkedList<itemEntryNode>();
@@ -102,7 +107,11 @@ public class Client {
 
                 }
 
-                if (itemIndexInput != -2 && itemIndexInput != -1) {
+                if (itemIndexInput > itemEntryNodeLinkedList.size() || itemIndexInput < -2) {
+                    // itemIndex is invalid
+                    System.out.println("Input is out of range, please re-input");
+
+                } else if (itemIndexInput != -2 && itemIndexInput != -1) {
                     // itemIndex is valid
                     // Prompt for quantity
                     System.out.print("Enter desired quantity : ");
@@ -126,7 +135,6 @@ public class Client {
 
                 // Check if user has chosen 1 item yet then set flag state, false if user has not chosen yet
                 if (checkIfUserPicked(itemEntryNodeLinkedList)) {
-
 
                     do {
                         // Prompt user if they want to quit
@@ -162,11 +170,42 @@ public class Client {
             clientSocket.send(new DatagramPacket(decryptedReport.getBytes(), decryptedReport.getBytes().length,
                     interfaceServerAddress, interfaceServerPort));
 
-            // TODO TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            System.out.println("TESTING DONE");
+            // Receive receipt data
+            clientSocket.receive(receivingPacket);
 
-            // Prompt user for payment input
+            // Find receipt string and total
+            receiptString = (createReceipt(new String(receivingPacket.getData())));
+            receiptTotal = findReceiptTotal(receiptString);
 
+            // Prompt user for payment input, loop till valid
+            do {
+                do {
+                try {
+                    // Output total and prompt
+                    System.out.print("Enter credit card number (16 digits) : ");
+                    creditCardNumberInput = Integer.parseInt(input.next().trim());
+
+                } catch (Exception exception) {
+                    creditCardNumberInput = -1;
+
+                }
+
+                // Check length TODO
+
+                // Check input validity
+                paymentInputFlag = creditCardNumberInput != -1;
+
+                } while (!paymentInputFlag);
+
+                // Input valid
+
+                // Send payment data to interface server
+
+                // Receive conformation
+
+                // Set paymentValidFlag
+
+            } while (paymentValidFlag);
 
             // Output conformation to user
 
@@ -175,6 +214,18 @@ public class Client {
             throw new RuntimeException(e);
         } catch (Exception exception) {}
 
+    }
+
+    private static String createReceipt(String receiptString) {
+        // Split string by "~" character for receipt
+        String[] tempArray = receiptString.split("~");
+        return tempArray[0];
+    }
+
+    private static double findReceiptTotal(String receiptString) {
+        // Split by ":" then find total by substring method
+        String[] tempArray = receiptString.split(":");
+        return Double.parseDouble(tempArray[1].substring(2));
     }
 
     private static String createItemReport(LinkedList<itemEntryNode> itemListLinkedList) {
@@ -186,7 +237,7 @@ public class Client {
             itemReport = itemReport.concat(itemListLinkedList.get(index).getIndexNumber() +
                     ":" + itemListLinkedList.get(index).getQuantity());
 
-            if (!(index == itemListLinkedList.size())) {
+            if (index < itemListLinkedList.size() - 1) {
                 itemReport = itemReport.concat("\n");
             }
         }

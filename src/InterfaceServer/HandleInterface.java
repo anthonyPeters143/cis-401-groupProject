@@ -49,7 +49,7 @@ public class HandleInterface {
 
     public void createReceipt() {
         // Initialize string with header
-        String receipt = "User Receipt\n#\tName\tPrice\tQuantity\tItem Total\n";
+        String receipt = "User Receipt\n#\tName\tPrice\tQuant\tItem Total\n";
         CatalogNode catalogNode;
 
         // Loop through catalogNode concatting string containing item's: indexNumber, name,
@@ -62,8 +62,8 @@ public class HandleInterface {
                     catalogNode.getIndexNumber() + "\t" +
                             catalogNode.getName() + "\t" +
                             catalogNode.getPrice() + "\t\t" +
-                            catalogNode.getQuantity() + "\t$" +
-                            catalogNode.getPrice());
+                            catalogNode.getQuantity() + "\t\t$" +
+                            catalogNode.getPrice()) + "\n";
 
         }
 
@@ -71,7 +71,7 @@ public class HandleInterface {
         userTotal = updateTotal();
 
         // Add total
-        receipt = receipt.concat("\tTotal : $" + userTotal);
+        receipt = receipt.concat("\tTotal : $" + userTotal + "~");
 
         userReceipt = receipt;
     }
@@ -88,6 +88,7 @@ public class HandleInterface {
         return totalCounter;
     }
 
+    // TODO EXCEPTION
     public void updateSelection() {
         // Create string from packet data, Split by "\n" to separate index entries
         String[] itemSelectionString = new String(clientPacket.getData()).split("\n");
@@ -97,10 +98,10 @@ public class HandleInterface {
         // Loop through array of index entries adding quantities to entries nodes
         for (int index = 0; index < itemSelectionString.length; index++) {
             // Split by ":" to separate indexNumber from quantity
-            itemSelectionEntry = itemSelectionString[index].split(":");
+            itemSelectionEntry = itemSelectionString[index].trim().split(":");
 
             // Add quantities and totals to item nodes
-            catalogNodeLinkedList.get(Integer.parseInt(itemSelectionEntry[0])).
+            catalogNodeLinkedList.get(Integer.parseInt(itemSelectionEntry[0]) - 1).
                     updatePriceTotalFromQuantity(Integer.parseInt(itemSelectionEntry[1]));
         }
 
