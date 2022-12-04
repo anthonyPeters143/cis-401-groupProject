@@ -4,47 +4,37 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Scanner;
 
 public class Client {
     public static void main(String[] args) {
         // Initialize variables
-        byte[] dataBuffer = new byte[65535];
+        byte[] dataBuffer;
         int interfaceServerPort,
-                loginKey, paymentKey,
-                userAccountKey,
-                itemListSize,
+                loginKey,userAccountKey,
                 itemIndexInput, itemQuantityInput;
         boolean inputValidFlag = false, loginConfirmationFlag = false, itemSelectionFlag = false,
                 quitSelectionFlag = false,
-                creditCardInputFlag = false, securityCodeInputFlag = false,
+                creditCardInputFlag, securityCodeInputFlag,
                 paymentValidFlag = false;
-        double receiptTotal;
         String usernameInput = "", passwordInput = "",
                 encryptedSignIn,
-                encryptedReport, decryptedReport,
+                decryptedReport,
                 itemListString,
                 receiptString,
                 decryptedCreditCard, decryptedSecurityCode,
                 encryptedPayment;
-        String[] loginSplitInput, itemSplitInput;
-
-        LinkedList<itemEntryNode> itemEntryNodeLinkedList = new LinkedList<itemEntryNode>();
-
-        DatagramPacket sendingPacket, receivingPacket  = new DatagramPacket(dataBuffer, dataBuffer.length);;
+        String[] loginSplitInput;
+        LinkedList<itemEntryNode> itemEntryNodeLinkedList;
+        DatagramPacket receivingPacket;
         DatagramSocket clientSocket;
         InetAddress interfaceServerAddress;
         Scanner input = new Scanner(System.in);
 
-        // Initialize itemDatabase
-            // use list of items
-
         // Connect to interface server for user verification
         try {
-            // Set up connection variables for interfaceServer at IP address "___" and port number "___"
-
+            // Set up connection variables for interfaceServer at IP address and port number 3000
             // TODO CHANGE TO INTERFACE SERVER ADDRESS
             interfaceServerAddress = InetAddress.getByName("localhost");
             interfaceServerPort = 3000;
@@ -82,6 +72,8 @@ public class Client {
                         interfaceServerAddress, interfaceServerPort));
 
                 // Receive packet from socket connection to InterfaceServer
+                dataBuffer = new byte[65535];
+                receivingPacket  = new DatagramPacket(dataBuffer, dataBuffer.length);
                 clientSocket.receive(receivingPacket);
 
                 // Split by "_", decode, and store received confirmation and paymentKey
@@ -89,12 +81,16 @@ public class Client {
                 if (Integer.parseInt(keyDecoding(loginSplitInput[0], loginKey)) == 1) {
                     loginConfirmationFlag = true;
                 }
+
+                // Set user account key for payment
                 userAccountKey = Integer.parseInt(keyDecoding(loginSplitInput[1], loginKey));
 
             // Check if confirmation is true
             } while (!loginConfirmationFlag);
 
             // Receive, separate by "\n" then ":", and store itemList data as itemListString
+            dataBuffer = new byte[65535];
+            receivingPacket  = new DatagramPacket(dataBuffer, dataBuffer.length);
             clientSocket.receive(receivingPacket);
             itemEntryNodeLinkedList = createItemEntries(new String(receivingPacket.getData()));
             itemListString = createItemListPrompt(itemEntryNodeLinkedList);
@@ -105,16 +101,14 @@ public class Client {
                 try {
                     System.out.print("Enter item index number or -1 for catalog : ");
                     itemIndexInput = Integer.parseInt(input.next().trim());
-
                 } catch (Exception exception) {
                     itemIndexInput = -2;
-
                 }
 
+                // Check input validity
                 if (itemIndexInput > itemEntryNodeLinkedList.size() || itemIndexInput < -2) {
                     // itemIndex is invalid
                     System.out.println("Input is out of range, please re-input");
-
                 } else if (itemIndexInput != -2 && itemIndexInput != -1) {
                     // itemIndex is valid
                     // Prompt for quantity
@@ -126,20 +120,17 @@ public class Client {
 
                     // Display updated details
                     System.out.println(createItemEntryFromIndexNumber(itemIndexInput - 1, itemEntryNodeLinkedList));
-
                 } else if (itemIndexInput == -1) {
                     // itemIndex is for catalog
                     System.out.println(itemListString);
-
                 } else {
                     // itemIndex is invalid
                     System.out.println("Input is invalid, please re-input");
-
                 }
 
                 // Check if user has chosen 1 item yet then set flag state, false if user has not chosen yet
                 if (checkIfUserPicked(itemEntryNodeLinkedList)) {
-
+                    // Loop till input is valid
                     do {
                         // Prompt user if they want to quit
                         System.out.print("Quit selection? (Y/N) : ");
@@ -150,24 +141,19 @@ public class Client {
                             // Set flags
                             quitSelectionFlag = true;
                             itemSelectionFlag = true;
-
-                        } if (qSelection.matches("n")) {
+                        } else if (qSelection.matches("n")) {
                             // Input valid, user doesn't want to quit
                             // Set flag
                             quitSelectionFlag = true;
-
                         } else {
                             // Input invalid
                             System.out.println("Input is invalid, please re-input");
                         }
-
                     } while (!quitSelectionFlag);
                 }
-
             } while (!itemSelectionFlag);
 
             // Create encrypted report for InterfaceServer
-//            encryptedReport = keyEncoding(createItemReport(itemEntryNodeLinkedList), userAccountKey);
             decryptedReport = createItemReport(itemEntryNodeLinkedList);
 
             // Send selection back InterfaceServer
@@ -175,13 +161,13 @@ public class Client {
                     interfaceServerAddress, interfaceServerPort));
 
             // Receive receipt data
+            dataBuffer = new byte[65535];
+            receivingPacket  = new DatagramPacket(dataBuffer, dataBuffer.length);
             clientSocket.receive(receivingPacket);
 
             // Find receipt string and total
             receiptString = (createReceipt(new String(receivingPacket.getData())));
-            receiptTotal = findReceiptTotal(receiptString);
 
-            // TODO TESTING DOWN FROM HERE
             // Prompt user for payment input, loop till valid
             do {
                 do {
@@ -194,11 +180,15 @@ public class Client {
                     if (!(decryptedCreditCard).matches("\\d{16}")) {
                         // Input invalid
                         decryptedCreditCard = "-1";
+
+                        System.out.println("Input is invalid, please re-input");
                     }
 
                 } catch (Exception exception) {
                     // Input invalid
                     decryptedCreditCard = "-1";
+
+                    System.out.println("Input is invalid, please re-input");
                 }
 
                 // Check input validity
@@ -216,11 +206,15 @@ public class Client {
                     if (!(decryptedSecurityCode).matches("\\d{3}")) {
                         // Input invalid
                         decryptedSecurityCode = "-1";
+
+                        System.out.println("Input is invalid, please re-input");
                     }
 
                 } catch (Exception exception) {
                     // Input invalid
                     decryptedSecurityCode = "-1";
+
+                    System.out.println("Input is invalid, please re-input");
                 }
 
                 // Check securityCode input validity
@@ -236,36 +230,29 @@ public class Client {
                         interfaceServerAddress, interfaceServerPort));
 
                 // Receive conformation
+                dataBuffer = new byte[65535];
+                receivingPacket  = new DatagramPacket(dataBuffer, dataBuffer.length);
                 clientSocket.receive(receivingPacket);
 
                 // Check if payment input is valid
-                if (new String(receivingPacket.getData()).matches("1")) {
+                if ((new String(receivingPacket.getData()).trim()).matches("1")) {
                     // Set paymentValidFlag
                     paymentValidFlag = true;
                 }
 
-            } while (paymentValidFlag);
+            } while (!paymentValidFlag);
 
             // Output conformation to user
             System.out.println("Order complete");
-
-
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         } catch (Exception exception) {}
-
     }
 
     private static String createReceipt(String receiptString) {
         // Split string by "~" character for receipt
         String[] tempArray = receiptString.split("~");
         return tempArray[0];
-    }
-
-    private static double findReceiptTotal(String receiptString) {
-        // Split by ":" then find total by substring method
-        String[] tempArray = receiptString.split(":");
-        return Double.parseDouble(tempArray[1].substring(2));
     }
 
     private static String createItemReport(LinkedList<itemEntryNode> itemListLinkedList) {

@@ -16,7 +16,7 @@ public class InterfaceServer {
         byte[] dataBuffer = new byte[65535];
         boolean loginValid = false, paymentValidFlag = false;
 
-        String dataLogin;
+        String dataLogin, encryptedPayment;
 
 
         InetAddress dataServerAddress;
@@ -56,6 +56,7 @@ public class InterfaceServer {
                 System.out.println("Ready for connection");
 
                 // Create packet using dataBuffer and accept socket connection
+                dataBuffer = new byte[65535];
                 clientPacket = new DatagramPacket(dataBuffer, dataBuffer.length);
                 clientSocket.receive(clientPacket);
 
@@ -73,9 +74,6 @@ public class InterfaceServer {
 
                     if (!loginValid) {
                         // Input invalid
-                        // Reset buffer
-                        dataBuffer = new byte[65535];
-
                         // Send back encrypted invalidation conformation to client
                         clientResponsePacket = new DatagramPacket(userThread.getLoginResult(false).getBytes(),
                                 userThread.getLoginResult(false).length(), userThread.getClientAddress(),
@@ -83,6 +81,7 @@ public class InterfaceServer {
                         clientSocket.send(clientResponsePacket);
 
                         // Wait for new input
+                        dataBuffer = new byte[65535];
                         clientPacket = new DatagramPacket(dataBuffer, dataBuffer.length);
                         clientSocket.receive(clientPacket);
 
@@ -110,6 +109,7 @@ public class InterfaceServer {
                 clientSocket.send(clientResponsePacket);
 
                 // Wait for selection input
+                dataBuffer = new byte[65535];
                 clientPacket = new DatagramPacket(dataBuffer, dataBuffer.length);
                 clientSocket.receive(clientPacket);
 
@@ -126,12 +126,14 @@ public class InterfaceServer {
                 // Loop till paymentInput is valid
                 do {
                     // Wait for encryptedPayment input
+                    dataBuffer = new byte[65535];
                     clientPacket = new DatagramPacket(dataBuffer, dataBuffer.length);
                     clientSocket.receive(clientPacket);
 
                     // TODO TEST IF BROKE
                     // Forward encrypted creditData to DataServer
-                    dataServerOut.println(new String(clientPacket.getData()));
+                    encryptedPayment = new String(clientPacket.getData()).trim();
+                    dataServerOut.println(encryptedPayment);
 
                     if (dataServerIn.readLine().matches("1")) {
                         // Input valid

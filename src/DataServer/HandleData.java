@@ -43,7 +43,7 @@ public class HandleData {
             do {
                 // Decode payment info using userKey then validate info
                 // TODO ERROR STARTING HERE
-                if (validatePayment(keyDecoding(dataServerIn.readLine().trim(), userPaymentNode.getKey()))) {
+                if (validatePayment(keyPaymentDecoding(dataServerIn.readLine().trim(), userPaymentNode.getKey()))) {
                     // Set paymentValidFlag
                     paymentValidFlag = true;
 
@@ -140,7 +140,7 @@ public class HandleData {
     }
 
     /**
-     * Method: keyDecoding, Method receives a message to decrypt and a key to decrypt it with. Message will be
+     * Method: keyPaymentDecoding, Method receives a message to decrypt and a key to decrypt it with. Message will be
      * decrypted using a ceaser cipher shifted backwards by key's amount. Method converts message string into a
      * character array, then cycles though array using a for loop. For each character their value is shifted by the
      * key's amount backwards then the decrypted version is added to end of decrypted string variable which is passed
@@ -150,7 +150,7 @@ public class HandleData {
      * @param key int, Key value to be used in ceaser cipher encryption
      * @return String, Decrypted message
      */
-    private static String keyDecoding(String message, int key) {
+    private static String keyPaymentDecoding(String message, int key) {
         final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         char messageChar;
         char[] messageCharArray = message.toCharArray();
@@ -167,22 +167,9 @@ public class HandleData {
                 // Skip decoding the dividing char
                 decodedMessage = decodedMessage.concat(String.valueOf(messageChar));
 
-            } else if (String.valueOf(messageChar).matches("\\d") ) {
+            } else {
                 // Char is numerical
                 decodedMessage = decodedMessage.concat(String.valueOf((char) ((int) messageChar - key)));
-
-            } else {
-                // Find position of char within alphabet then concat the decoded char to message
-                int position = (ALPHABET.indexOf(messageChar) - key) % 26;
-
-                // Circle around to other side of alphabet if position is negative
-                if (position < 0) {
-                    position = ALPHABET.length() + position;
-                }
-
-                decodedMessage = decodedMessage.concat(String.valueOf(
-                        ALPHABET.charAt(position))
-                );
 
             }
         }
