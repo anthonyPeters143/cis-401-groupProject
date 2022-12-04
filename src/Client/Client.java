@@ -33,7 +33,7 @@ public class Client {
 
         LinkedList<itemEntryNode> itemEntryNodeLinkedList = new LinkedList<itemEntryNode>();
 
-        DatagramPacket sendingPacket, receivingPacket  = new DatagramPacket(dataBuffer, dataBuffer.length);;
+        DatagramPacket receivingPacket;
         DatagramSocket clientSocket;
         InetAddress interfaceServerAddress;
         Scanner input = new Scanner(System.in);
@@ -82,6 +82,8 @@ public class Client {
                         interfaceServerAddress, interfaceServerPort));
 
                 // Receive packet from socket connection to InterfaceServer
+                dataBuffer = new byte[65535];
+                receivingPacket  = new DatagramPacket(dataBuffer, dataBuffer.length);
                 clientSocket.receive(receivingPacket);
 
                 // Split by "_", decode, and store received confirmation and paymentKey
@@ -95,6 +97,8 @@ public class Client {
             } while (!loginConfirmationFlag);
 
             // Receive, separate by "\n" then ":", and store itemList data as itemListString
+            dataBuffer = new byte[65535];
+            receivingPacket  = new DatagramPacket(dataBuffer, dataBuffer.length);
             clientSocket.receive(receivingPacket);
             itemEntryNodeLinkedList = createItemEntries(new String(receivingPacket.getData()));
             itemListString = createItemListPrompt(itemEntryNodeLinkedList);
@@ -151,7 +155,7 @@ public class Client {
                             quitSelectionFlag = true;
                             itemSelectionFlag = true;
 
-                        } if (qSelection.matches("n")) {
+                        } else if (qSelection.matches("n")) {
                             // Input valid, user doesn't want to quit
                             // Set flag
                             quitSelectionFlag = true;
@@ -167,7 +171,6 @@ public class Client {
             } while (!itemSelectionFlag);
 
             // Create encrypted report for InterfaceServer
-//            encryptedReport = keyEncoding(createItemReport(itemEntryNodeLinkedList), userAccountKey);
             decryptedReport = createItemReport(itemEntryNodeLinkedList);
 
             // Send selection back InterfaceServer
@@ -175,13 +178,14 @@ public class Client {
                     interfaceServerAddress, interfaceServerPort));
 
             // Receive receipt data
+            dataBuffer = new byte[65535];
+            receivingPacket  = new DatagramPacket(dataBuffer, dataBuffer.length);
             clientSocket.receive(receivingPacket);
 
             // Find receipt string and total
             receiptString = (createReceipt(new String(receivingPacket.getData())));
             receiptTotal = findReceiptTotal(receiptString);
 
-            // TODO TESTING DOWN FROM HERE
             // Prompt user for payment input, loop till valid
             do {
                 do {
@@ -194,11 +198,15 @@ public class Client {
                     if (!(decryptedCreditCard).matches("\\d{16}")) {
                         // Input invalid
                         decryptedCreditCard = "-1";
+
+                        System.out.println("Input is invalid, please re-input");
                     }
 
                 } catch (Exception exception) {
                     // Input invalid
                     decryptedCreditCard = "-1";
+
+                    System.out.println("Input is invalid, please re-input");
                 }
 
                 // Check input validity
@@ -216,11 +224,15 @@ public class Client {
                     if (!(decryptedSecurityCode).matches("\\d{3}")) {
                         // Input invalid
                         decryptedSecurityCode = "-1";
+
+                        System.out.println("Input is invalid, please re-input");
                     }
 
                 } catch (Exception exception) {
                     // Input invalid
                     decryptedSecurityCode = "-1";
+
+                    System.out.println("Input is invalid, please re-input");
                 }
 
                 // Check securityCode input validity
@@ -236,24 +248,23 @@ public class Client {
                         interfaceServerAddress, interfaceServerPort));
 
                 // Receive conformation
+                dataBuffer = new byte[65535];
+                receivingPacket  = new DatagramPacket(dataBuffer, dataBuffer.length);
                 clientSocket.receive(receivingPacket);
 
                 // Check if payment input is valid
-                if (new String(receivingPacket.getData()).matches("1")) {
+                if ((new String(receivingPacket.getData()).trim()).matches("1")) {
                     // Set paymentValidFlag
                     paymentValidFlag = true;
                 }
 
-            } while (paymentValidFlag);
+            } while (!paymentValidFlag);
 
             // Output conformation to user
             System.out.println("Order complete");
-
-
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         } catch (Exception exception) {}
-
     }
 
     private static String createReceipt(String receiptString) {

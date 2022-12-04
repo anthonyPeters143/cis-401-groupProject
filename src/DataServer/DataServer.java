@@ -28,11 +28,8 @@ public class DataServer {
         paymentNodeLinkedList = initializePaymentFromFilePath("src/DataServer/data/creditInfo.txt");
 
         try {
-
             // Set up connection information
-            // TODO SWITCH TO INTERFACE SERVER ADDRESS
             dataServerPort = 3001;
-//            interfaceServerAddress = InetAddress.getByName("localhost");
 
             // Create server on dataServerPort
             dataServerServerSocket = new ServerSocket(dataServerPort);
