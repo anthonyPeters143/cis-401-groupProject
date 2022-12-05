@@ -20,7 +20,7 @@ public class Client {
     /**
      * Method: main, Used to drive Client for client side TCP connection with InterfaceServer. User will be prompted for
      * username and password inputs. Usernames and passwords can only require alphanumerical or underscore characters.
-     * Once inputs are verify then they will be placed in pattern "username_password" then encrypted and send to
+     * Once inputs are verified then they will be placed in pattern "username_password" then encrypted and send to
      * InterfaceServer. If invalid then Client and InterfaceServer will loop till inputs are valid. Once valid then
      * InterfaceServer will send list of item entries to Client. Client will store item entries as LinkedList filled
      * with itemEntryNodes. User will be prompted for item selection and then quantity inputs, if out of range then
@@ -43,7 +43,8 @@ public class Client {
         int interfaceServerPort,
                 loginKey,userAccountKey,
                 itemIndexInput, itemQuantityInput;
-        boolean inputValidFlag = false, loginConfirmationFlag = false, itemSelectionFlag = false,
+        boolean inputValidFlag = false, quantityValidFlag= false,
+                loginConfirmationFlag = false, itemSelectionFlag = false,
                 quitSelectionFlag = false,
                 creditCardInputFlag, securityCodeInputFlag,
                 paymentValidFlag = false;
@@ -107,8 +108,14 @@ public class Client {
 
                 // Split by "_", decode, and store received confirmation and paymentKey
                 loginSplitInput = new String(receivingPacket.getData()).trim().split("_");
+
+                // Check conformation
                 if (Integer.parseInt(keyDecoding(loginSplitInput[0], loginKey)) == 1) {
+                    // Input is valid
                     loginConfirmationFlag = true;
+                } else {
+                    // Input is invalid
+                    System.out.println("Input is invalid, please re-input");
                 }
 
                 // Set user account key for payment
@@ -125,7 +132,7 @@ public class Client {
             itemListString = createItemListPrompt(itemEntryNodeLinkedList);
 
             // Prompt and loop till user chooses at least 1 item from InterfaceServer itemList
-            System.out.println(itemListString);
+            System.out.println("\n" + itemListString);
             do {
                 try {
                     System.out.print("Enter item index number or -1 for catalog : ");
@@ -140,9 +147,21 @@ public class Client {
                     System.out.println("Input is out of range, please re-input");
                 } else if (itemIndexInput != -2 && itemIndexInput != -1) {
                     // itemIndex is valid
-                    // Prompt for quantity
-                    System.out.print("Enter desired quantity : ");
-                    itemQuantityInput = Integer.parseInt(input.next().trim());
+                    // Prompt and loop for quantity
+                    do {
+                        System.out.print("Enter desired quantity : ");
+                        itemQuantityInput = Integer.parseInt(input.next().trim());
+
+                        // Check if input is within range of (1,1000)
+                        if (itemQuantityInput >= 1 && itemQuantityInput <= 1000) {
+                            quantityValidFlag = true;
+                        } else {
+                            // itemQuantity is invalid
+                            quantityValidFlag = false;
+                            System.out.println("Input is out of range, please re-input");
+                        }
+
+                    } while (!quantityValidFlag);
 
                     // Add quantity and priceTotal to choose item entry
                     itemEntryNodeLinkedList.get(itemIndexInput - 1).updatePriceTotalFromQuantity(itemQuantityInput);
@@ -213,7 +232,6 @@ public class Client {
 
                         System.out.println("Input is invalid, please re-input");
                     }
-
                 } catch (Exception exception) {
                     // Input invalid
                     decryptedCreditCard = "-1";
@@ -223,7 +241,6 @@ public class Client {
 
                 // Check input validity
                 creditCardInputFlag = !decryptedCreditCard.equals("-1");
-
                 } while (!creditCardInputFlag);
 
                 do {
@@ -239,7 +256,6 @@ public class Client {
 
                         System.out.println("Input is invalid, please re-input");
                     }
-
                 } catch (Exception exception) {
                     // Input invalid
                     decryptedSecurityCode = "-1";
@@ -268,6 +284,9 @@ public class Client {
                 if ((new String(receivingPacket.getData()).trim()).matches("1")) {
                     // Set paymentValidFlag
                     paymentValidFlag = true;
+                } else {
+                    // Input invalid
+                    System.out.println("Input is invalid, please re-input");
                 }
 
             } while (!paymentValidFlag);
@@ -402,7 +421,6 @@ public class Client {
     private static String createItemEntryFromIndexNumber(int indexNumber, LinkedList<ItemEntryNode> itemListLinkedList) {
         // Initialize String
         String itemEntryString = "";
-        String[] itemEntry;
 
         // Initialize ItemEntryNode from indexNumber
         ItemEntryNode itemEntryNode = itemListLinkedList.get(indexNumber);

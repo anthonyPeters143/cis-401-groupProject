@@ -1,7 +1,6 @@
 package DataServer;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -9,8 +8,11 @@ import java.util.LinkedList;
 import java.util.Objects;
 
 /**
- * Class: HandleData, Class used to drive DataServer
+ * Class: HandleData, Class created by DataServer to connect to InterfaceServer using a TCP connection. System will loop
+ * searching for user PaymentNode using account details, then decode data from InterfaceServer to check if payment input
+ * is valid and respond with result to InterfaceServer.
  *
+ * @author Anthony Peters
  */
 public class HandleData {
     PrintWriter dataServerOut;
@@ -20,12 +22,19 @@ public class HandleData {
     Socket dataServerSocket;
 
 
+    /**
+     * Method: HandleData constructor, Augment-constructor that needs DataServer Socket and paymentNode Linked List.
+     * When starting will set up scanners for TCP connection to DataServer then wait for input from DataServer to
+     * search for user paymentNode within LinkedList. System will loop decoding using user key value, checking inputs of
+     * credit card and security codes. If valid then respond to InterfaceServer with a 1 character to InterfaceServer,
+     * if invalid then respond to InterfaceServer with a 0 character to InterfaceServer.
+     *
+     * @param dataServerSocketInput Socket, DataServerSocket
+     * @param paymentNodeLinkedListInput LinkedList<PaymentNode> PaymentNodeLinkedList, Linked List of PaymentNodes
+     */
     HandleData(Socket dataServerSocketInput, LinkedList<PaymentNode> paymentNodeLinkedListInput) {
         // Initialize parameters
         boolean paymentValidFlag = false;
-
-        String[] loginInput;
-        String usernameInput, passwordInput;
         dataServerSocket = dataServerSocketInput;
         paymentNodeLinkedList = paymentNodeLinkedListInput;
 
@@ -40,7 +49,6 @@ public class HandleData {
             // Loop till payment is valid
             do {
                 // Decode payment info using userKey then validate info
-                // TODO ERROR STARTING HERE
                 if (validatePayment(keyPaymentDecoding(dataServerIn.readLine().trim(), userPaymentNode.getKey()))) {
                     // Set paymentValidFlag
                     paymentValidFlag = true;
@@ -51,11 +59,17 @@ public class HandleData {
                     // Send to interfaceServer payment invalid signal
                     dataServerOut.println("0");
                 }
-
             } while (!paymentValidFlag);
         } catch (Exception exception) {};
     }
 
+    /**
+     * Method: validatePayment, Method will take String value in the pattern of "creditCard-securityCode" and split by
+     * '-' character, then check values against stored user account details and return result of match.
+     *
+     * @param paymentDetailInput String, String value of "creditCard-securityCode"
+     * @return boolean, Results if account details match input
+     */
     private boolean validatePayment(String paymentDetailInput) {
         // Initialize variables
         String[] paymentDetail = paymentDetailInput.split("-");
@@ -65,8 +79,14 @@ public class HandleData {
                 Objects.equals(userPaymentNode.getSecurityCode(), paymentDetail[1]);
     }
 
-    // TODO UPDATE FOR REDUNDANCY
-    private PaymentNode findUserPaymentNode(String paymentID) throws IOException {
+    /**
+     * Method: findUserPaymentNode, Method will take String input in pattern of "username:password" and split by :
+     * character then check it against all PaymentNodes in LinkedList.
+     *
+     * @param paymentID String, String value of "username:password"
+     * @return PaymentNode, User paymentNode from LinkedList
+     */
+    private PaymentNode findUserPaymentNode(String paymentID) {
         // Initialize variables
         String[] loginInput = paymentID.split(":");
         PaymentNode userPaymentNode;
@@ -79,10 +99,12 @@ public class HandleData {
             // Check if username and password parameters match input
             if (userPaymentNode.getUsername().matches(loginInput[0]) &&
             userPaymentNode.getPassword().matches(loginInput[1])) {
+                // Return userPaymentNode
                 return userPaymentNode;
             }
         }
 
+        // If not found return null value
         return null;
     }
 
@@ -158,11 +180,9 @@ public class HandleData {
             {
                 // Skip decoding the dividing char
                 decodedMessage = decodedMessage.concat(String.valueOf(messageChar));
-
             } else {
                 // Char is numerical
                 decodedMessage = decodedMessage.concat(String.valueOf((char) ((int) messageChar - key)));
-
             }
         }
 

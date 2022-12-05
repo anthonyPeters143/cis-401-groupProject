@@ -5,28 +5,35 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.LinkedList;
 
+/**
+ * Class: HandleInterface, Class created by InterfaceServer used to store and handle user connection. HandleInterface
+ * will store Datagram data, create item list and receipts, and attempt to log in users.
+ *
+ * @author Anthony Peters
+ */
 public class HandleInterface {
-    int loginKey,
-        clientPort, interfaceSeverPort, dataServerPort,
-        accountKey;
-
+    int loginKey, clientPort, accountKey;
     double userTotal;
-
-    String userReceipt;
-
-    String usernameEncrypted, usernameDecrypted,
-            passwordEncrypted, passwordDecrypted,
-            selectionEncrypted, getSelectionEncrypted;
-
-    String smInvalidLogin;
-
+    String preppedItemList, userReceipt;
+    String usernameDecrypted, passwordDecrypted;
     DatagramPacket clientPacket;
     DatagramSocket interfaceSocket;
     InetAddress clientAddress;
     LinkedList<LoginNode> loginNodeLinkedList;
     LinkedList<CatalogNode> catalogNodeLinkedList;
 
-
+    /**
+     * Method: HandleInterface constructor, Augment constructor will accept Client DatagramPacket, userKey int value,
+     * InterfaceServer DatagramSocket, LoginNode and CatalogNode LinkedLists. Will Store values into clientPacket,
+     * clientPort, clientAddress, loginKey, InterfaceSocket, loginNodeLinkedList, and catalogNodeLinkedList. Then create
+     * a String value of item list in pattern "indexNumber:name:price" for later use.
+     *
+     * @param clientPacketInput DatagramPacket, Client packet input
+     * @param loginKeyInput int, Login key input
+     * @param interfaceSocketInput DatagramSocket, InterfaceServer socket input
+     * @param loginNodeLinkedListInput LinkedList<LoginNode>, LinkedList of LoginNodes
+     * @param catalogNodeLinkedListInput LinkedList<CatalogNode>, LinkedList of CatalogNodes
+     */
     HandleInterface(DatagramPacket clientPacketInput, int loginKeyInput,
                     DatagramSocket interfaceSocketInput, LinkedList<LoginNode> loginNodeLinkedListInput,
                     LinkedList<CatalogNode> catalogNodeLinkedListInput) {
@@ -39,15 +46,25 @@ public class HandleInterface {
         loginNodeLinkedList = loginNodeLinkedListInput;
         catalogNodeLinkedList = catalogNodeLinkedListInput;
 
-        // Initialize system messages
-        smInvalidLogin = "Username or password input is invalid or not found, please retry";
+        // Prep item list String
+        preppedItemList = prepItemList(catalogNodeLinkedList);
     }
 
-
+    /**
+     * Method: getDataLogin, Method will create String of username and password values in the pattern
+     * "username:password" then return it.
+     *
+     * @return String value of "username:password"
+     */
     public String getDataLogin() {
         return usernameDecrypted + ":" + passwordDecrypted;
     }
 
+    /**
+     * Method: createReceipt, Method will create and store String value of receipt including titles
+     * "User Receipt   Name    Price   Quant   Item Total" by looping through catalogNodeLinkedList concatting values to
+     * end of receipt String value.
+     */
     public void createReceipt() {
         // Initialize string with header
         String receipt = "User Receipt\n#\tName\tPrice\tQuant\tItem Total\n";
@@ -64,9 +81,7 @@ public class HandleInterface {
                             catalogNode.getName() + "\t" +
                             catalogNode.getPrice() + "\t\t" +
                             catalogNode.getQuantity() + "\t\t$" +
-                            catalogNode.getPrice()) + "\n";
-
-        }
+                            catalogNode.getPrice()) + "\n";}
 
         // Find total
         userTotal = updateTotal();
@@ -77,6 +92,12 @@ public class HandleInterface {
         userReceipt = receipt;
     }
 
+    /**
+     * Method: updateTotal, Method will loop through catalogNodeLinkedList checking price totals then returning
+     * totalCounter values.
+     *
+     * @return double, Total counter value
+     */
     private double updateTotal() {
         // Initialize total counter
         double totalCounter = 0;
@@ -89,11 +110,13 @@ public class HandleInterface {
         return totalCounter;
     }
 
-    // TODO EXCEPTION
+    /**
+     * Method: updateSelection, Method will split clientPacket data by "\n" characters then update each
+     * catalogNodeLinkedList. Once update is complete then system will update receipt.
+     */
     public void updateSelection() {
         // Create string from packet data, Split by "\n" to separate index entries
         String[] itemSelectionString = new String(clientPacket.getData()).split("\n");
-//                keyDecoding(new String(clientPacket.getData()),accountKey).split("\n");
         String[] itemSelectionEntry;
 
         // Loop through array of index entries adding quantities to entries nodes
@@ -110,8 +133,13 @@ public class HandleInterface {
         createReceipt();
     }
 
-    // Attempt to log in into account using username and password, encoded using loginKey value. Will decrypt inputs
-    // then check if inputs match any LoginNodes. If found to match then accountKey will be recorded for later use.
+    /**
+     * Method: login, Method will attempt to log in into account using username and password, encoded using loginKey
+     * value. Will decrypt inputs then check if inputs match any LoginNodes. If found to match then accountKey will be
+     * recorded for later use and system will return true but if not found then system will return false.
+     *
+     * @return boolean, Result if loginDetails are valid
+     */
     public boolean login() {
         try {
             // Spilt input by "_" into encrypted username and password
@@ -134,11 +162,19 @@ public class HandleInterface {
             }
         }
 
+        // Return false if invalid
         return false;
     }
 
-    // Will attempt to log in using username and password inputs. If matching then accountKey value will be recorded,
-    // if not then accountKey will be set to -1.
+    /**
+     * Method: attemptLogin, Method will attempt to log in using username and password inputs to every LoginNode in
+     * LinkedList. If found then account key from LoginNode will be recorded and returned, if not found then account key
+     * will be recorded and returned as -1.
+     *
+     * @param usernameInput String, Username input
+     * @param passwordInput String, Password input
+     * @return int, Account key value from LoginNode
+     */
     private int attemptLogin(String usernameInput, String passwordInput) {
         // Cycle through loginNodeLinkedList to match inputs to LoginNode fields
         for (int index = 0; index < loginNodeLinkedList.size(); index++) {
@@ -156,12 +192,23 @@ public class HandleInterface {
         return accountKey;
     }
 
-    // Updates the client packet in thread
+    /**
+     * Method: updateClientPacket, Method updates the client packet parameter stored.
+     *
+     * @param newPacket DatagramPacket, New packet input
+     */
     public void updateClientPacket(DatagramPacket newPacket) {
         clientPacket = newPacket;
     }
 
     // Returns encoded login update message using login key
+
+    /**
+     * Method: getLoginResult, Method will create encoded using loginKey string in pattern "result_accountKey".
+     *
+     * @param result boolean, Result of login test
+     * @return String value of "result_accountKey"
+     */
     public String getLoginResult(boolean result) {
         String loginResult = "";
 
@@ -178,10 +225,13 @@ public class HandleInterface {
         return keyEncoding(loginResult, loginKey);
     }
 
-
-
-    // Loops through CatalogNodeLinkedList and creates a string including indexNumber, name, and price. Will use
-    // pattern indexNumber + ":" + name + ":" + price "\n", will skip new line on last line.
+    /**
+     * Method: prepItemList, Method loops through CatalogNodeLinkedList and creates a string use pattern
+     * "indexNumber:name:price" including every CatalogNode's indexNumber, name, and price.
+     *
+     * @param itemList LinkedList<CatalogNode>, LinkedList of CatalogNodes
+     * @return String value of "indexNumber:name:price"
+     */
     private static String prepItemList(LinkedList<CatalogNode> itemList) {
         // Initialize String
         String itemListOutput = "";
@@ -204,20 +254,38 @@ public class HandleInterface {
         return itemListOutput;
     }
 
+    /**
+     * Method: getUserReceipt, Method returns String value of userReceipt from HandleInterface.
+     *
+     * @return String value of userReceipt
+     */
     public String getUserReceipt() {
         return userReceipt;
     }
 
-    // Calls method to convert CatalogNodeLinkedList into a String, encoding using account key and returns it
+    /**
+     * Method: getPreppedItemList, Method returns String value of preppedItemList from HandleInterface.
+     *
+     * @return String value of preppedItemList
+     */
     public String getPreppedItemList() {
-        // TODO SWITCH TO CREATE IN CONSTRUCTOR
-        return prepItemList(catalogNodeLinkedList);
+        return preppedItemList;
     }
 
+    /**
+     * Method: getClientAddress, Method returns InetAddress value of clientAddress from HandleInterface.
+     *
+     * @return InetAddress value of clientAddress
+     */
     public InetAddress getClientAddress() {
         return clientAddress;
     }
 
+    /**
+     * Method: getClientPort, Method returns int value of clientPort from HandleInterface.
+     *
+     * @return int value of clientPort
+     */
     public int getClientPort() {
         return clientPort;
     }

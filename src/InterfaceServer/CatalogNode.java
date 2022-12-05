@@ -1,8 +1,8 @@
 package InterfaceServer;
 
 /**
- * Class: CatalogNode, Used to hold values as nodes within LinkedList database. Will store indexNumber, name, and price
- * values.
+ * Class: CatalogNode, Used to hold values as nodes within LinkedList database for InterfaceServer. Will store
+ * indexNumber, name, and price values.
  *
  * @author Anthony Peters
  */
@@ -28,6 +28,12 @@ public class CatalogNode {
         priceTotal = 0;
     }
 
+    /**
+     * Method: updatePriceTotalFromQuantity, Takes int quantity input then updates priceTotal with the value of quantity
+     * multiplied by price. Then update quantity counter with quantity amount.
+     *
+     * @param quantityInput int, Quantity input
+     */
     void updatePriceTotalFromQuantity(int quantityInput) {
         priceTotal += price * quantityInput;
         quantity += quantityInput;
@@ -60,10 +66,11 @@ public class CatalogNode {
         return name;
     }
 
-    public double getPriceTotal() {
-        return priceTotal;
-    }
-
+    /**
+     * Method: getQuantity, Returns int value of quantity parameter
+     *
+     * @return int, Quantity value of CatalogNode
+     */
     public int getQuantity() {
         return quantity;
     }
