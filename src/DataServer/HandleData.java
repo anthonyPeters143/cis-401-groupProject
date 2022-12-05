@@ -4,21 +4,19 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.DatagramPacket;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.LinkedList;
 import java.util.Objects;
 
+/**
+ * Class: HandleData, Class used to drive DataServer
+ *
+ */
 public class HandleData {
     PrintWriter dataServerOut;
     BufferedReader dataServerIn;
-
     PaymentNode userPaymentNode;
-
-    DatagramPacket interfacePacket;
     LinkedList<PaymentNode> paymentNodeLinkedList;
-
     Socket dataServerSocket;
 
 
@@ -49,18 +47,12 @@ public class HandleData {
 
                     // Send to interfaceServer payment valid signal
                     dataServerOut.println("1");
-
                 } else {
                     // Send to interfaceServer payment invalid signal
                     dataServerOut.println("0");
-
                 }
 
             } while (!paymentValidFlag);
-
-            // Validate payment info after decoding using userKey
-
-
         } catch (Exception exception) {};
     }
 

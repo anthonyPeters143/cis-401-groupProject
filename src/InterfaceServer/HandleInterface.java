@@ -41,10 +41,6 @@ public class HandleInterface {
 
         // Initialize system messages
         smInvalidLogin = "Username or password input is invalid or not found, please retry";
-
-
-        // Initialize connection to DataServer TODO
-
     }
 
 

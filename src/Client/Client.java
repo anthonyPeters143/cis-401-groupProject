@@ -7,7 +7,36 @@ import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.Scanner;
 
+/**
+ * Class: Client, Used to prompt user then communicate connect with InterfaceServer for login info, then item selection,
+ * lastly credit card number and security code. Will use port 3000 and localhost till changed for interfaceServer
+ * connection.
+ *
+ * @author Anthony Peters
+ */
+
 public class Client {
+
+    /**
+     * Method: main, Used to drive Client for client side TCP connection with InterfaceServer. User will be prompted for
+     * username and password inputs. Usernames and passwords can only require alphanumerical or underscore characters.
+     * Once inputs are verify then they will be placed in pattern "username_password" then encrypted and send to
+     * InterfaceServer. If invalid then Client and InterfaceServer will loop till inputs are valid. Once valid then
+     * InterfaceServer will send list of item entries to Client. Client will store item entries as LinkedList filled
+     * with itemEntryNodes. User will be prompted for item selection and then quantity inputs, if out of range then
+     * system will notify user and prompt for another input till valid. If at least one selection is complete then
+     * system will prompt user to quit expecting a 'y' or 'n' character reply, if input isn't valid then system will
+     * loop till it is. Once selection is valid Client will send selection input in pattern "indexNumber:quantity" to
+     * InterfaceServer. If selection is invalid then Client will loop till valid. If selection valid then it will be
+     * sent InterfaceServer to respond with receipt which will be posted to user. Then user will input credit card and
+     * security code which need to be 16 and 3 characters respectively. Input will be validated and system will loop
+     * till valid. When valid input will be placed in pattern "creditCard-securityCode" then encrypted and sent to
+     * InterfaceServer. Then Client will wait until it receives conformation value. If conformation value is = 0 then,
+     * payment input is invalid and will need to be reentered till valid. If conformation value is = 1 then, payment
+     * input is valid and system will output "order compete"
+     *
+     * @param args System input
+     */
     public static void main(String[] args) {
         // Initialize variables
         byte[] dataBuffer;
@@ -26,7 +55,7 @@ public class Client {
                 decryptedCreditCard, decryptedSecurityCode,
                 encryptedPayment;
         String[] loginSplitInput;
-        LinkedList<itemEntryNode> itemEntryNodeLinkedList;
+        LinkedList<ItemEntryNode> itemEntryNodeLinkedList;
         DatagramPacket receivingPacket;
         DatagramSocket clientSocket;
         InetAddress interfaceServerAddress;
@@ -165,8 +194,9 @@ public class Client {
             receivingPacket  = new DatagramPacket(dataBuffer, dataBuffer.length);
             clientSocket.receive(receivingPacket);
 
-            // Find receipt string and total
+            // Find receipt string and output to user
             receiptString = (createReceipt(new String(receivingPacket.getData())));
+            System.out.println("\n" + receiptString);
 
             // Prompt user for payment input, loop till valid
             do {
@@ -249,13 +279,27 @@ public class Client {
         } catch (Exception exception) {}
     }
 
+    /**
+     * Method: createReceipt, Method takes receipt input from InterfaceServer and splits it by "~" character and
+     * returns it.
+     *
+     * @param receiptString String, receipt input from InterfaceServer
+     * @return String, String value of receipt
+     */
     private static String createReceipt(String receiptString) {
         // Split string by "~" character for receipt
         String[] tempArray = receiptString.split("~");
         return tempArray[0];
     }
 
-    private static String createItemReport(LinkedList<itemEntryNode> itemListLinkedList) {
+    /**
+     * Method: createItemReport, Method takes LinkedList of itemEntryNodes and puts values into "indexNumber:quantity"
+     * pattern within a String value that is returned.
+     *
+     * @param itemListLinkedList LinkedList<ItemEntryNode>, Linked list of itemEntryNodes
+     * @return String value of indexNumber and quantity separated by ":"
+     */
+    private static String createItemReport(LinkedList<ItemEntryNode> itemListLinkedList) {
         // Initialize string
         String itemReport = "";
 
@@ -272,7 +316,14 @@ public class Client {
         return itemReport;
     }
 
-    private static boolean checkIfUserPicked(LinkedList<itemEntryNode> itemListLinkedList) {
+    /**
+     * Method: checkIfUserPicked, Method cycles through LinkedList counting quantities for each node then returning
+     * boolean value based on if counter variable is greater than 0.
+     *
+     * @param itemListLinkedList LinkedList<ItemEntryNode>, Linked list of itemEntryNodes
+     * @return boolean. value based on if quantity counter is greater than 0
+     */
+    private static boolean checkIfUserPicked(LinkedList<ItemEntryNode> itemListLinkedList) {
         // Initialize counter
         int itemCounter = 0;
 
@@ -284,9 +335,16 @@ public class Client {
         return itemCounter > 0;
     }
 
-    private static LinkedList<itemEntryNode> createItemEntries(String itemListInput) {
+    /**
+     * Method: createItemEntries, Method takes String input from InterfaceServer and creates LinkedList of
+     * itemEntryNodes then returns it.
+     *
+     * @param itemListInput String, String value of all items send from InterfaceServer
+     * @return LinkedList<ItemEntryNode>, Linked list of itemEntryNodes
+     */
+    private static LinkedList<ItemEntryNode> createItemEntries(String itemListInput) {
         String[] itemEntries, entryData;
-        LinkedList<itemEntryNode> itemListLinkedList = new LinkedList<itemEntryNode>();
+        LinkedList<ItemEntryNode> itemListLinkedList = new LinkedList<ItemEntryNode>();
 
         // Split input by "\n" chars
         itemEntries = itemListInput.split("\n");
@@ -297,17 +355,24 @@ public class Client {
             entryData = itemEntries[index].split(":");
 
             // Create itemEntryNodes from item indexNumber, name, and price
-            itemListLinkedList.add(new itemEntryNode(Integer.parseInt(entryData[0]),
+            itemListLinkedList.add(new ItemEntryNode(Integer.parseInt(entryData[0]),
                     entryData[1], Double.parseDouble(entryData[2])));
         }
 
         return itemListLinkedList;
     }
 
-    private static String createItemListPrompt(LinkedList<itemEntryNode> itemListLinkedList) {
+    /**
+     * Method: createItemListPrompt, Method will take LinkedList of itemEntryNodes and create String prompt including
+     * all values within itemListNodes.
+     *
+     * @param itemListLinkedList LinkedList<ItemEntryNode>, Linked list of itemEntryNodes
+     * @return String, Prompt of item entries
+     */
+    private static String createItemListPrompt(LinkedList<ItemEntryNode> itemListLinkedList) {
         // Initialize String
         String itemListString = "#\tName\tPrice\n";
-        itemEntryNode itemEntryNode;
+        ItemEntryNode itemEntryNode;
 
         // Loop through itemList attaching items as pattern "indexNumber    name    price"
         for (int index = 0; index < itemListLinkedList.size(); index++) {
@@ -325,13 +390,22 @@ public class Client {
         return itemListString;
     }
 
-    private static String createItemEntryFromIndexNumber(int indexNumber, LinkedList<itemEntryNode> itemListLinkedList) {
+    /**
+     * Method: createItemEntryFromIndexNumber, Method will take LinkedList of itemEntryNodes and indexNumber to search
+     * ItemEntryNode using it's indexNumber value. When it is find then method will create item entry prompt including:
+     * name, quantity, price, and item total.
+     *
+     * @param indexNumber int, IndexNumber value for wanted ItemEntryNode
+     * @param itemListLinkedList LinkedList<ItemEntryNode>, Linked list of itemEntryNodes
+     * @return String, Item prompt
+     */
+    private static String createItemEntryFromIndexNumber(int indexNumber, LinkedList<ItemEntryNode> itemListLinkedList) {
         // Initialize String
         String itemEntryString = "";
         String[] itemEntry;
 
-        // Initialize itemEntryNode from indexNumber
-        itemEntryNode itemEntryNode = itemListLinkedList.get(indexNumber);
+        // Initialize ItemEntryNode from indexNumber
+        ItemEntryNode itemEntryNode = itemListLinkedList.get(indexNumber);
 
         // Create item details (name, price, quantity, and priceTotal) string
         // from item indexNumber - 1 due to different in starting numbers

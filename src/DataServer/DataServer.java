@@ -1,28 +1,35 @@
 package DataServer;
 
-import InterfaceServer.LoginNode;
-
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.LinkedList;
 import java.util.Scanner;
 
-public class DataServer {
-    // TODO TESTING FROM HERE DOWN
+/**
+ * Class: DataServer, Class is used to connect with InterfaceServer to store and validate payment information. Will
+ * connect with InterfaceServer on port 3001.
+ *
+ * @author Anthony Peters
+ */
 
+public class DataServer {
+
+    /**
+     * Method: main, Method used to drive TCP connection to InterfaceServer and create HandleData threads. When starting
+     * up will create LinkedList of paymentNodes from creditInfo.txt file, then start TCP connection with
+     * InterfaceServer and create HandleData thread.
+     *
+     * @param args System input
+     * @throws FileNotFoundException
+     */
     public static void main(String[] args) throws FileNotFoundException {
         // Initialize variables
         int dataServerPort;
-
         ServerSocket dataServerServerSocket;
         Socket dataServerSocket;
-        InetAddress interfaceServerAddress;
         LinkedList<PaymentNode> paymentNodeLinkedList;
-
-        HandleData serverThread;
 
         // Initialize database from Content Root Path
         paymentNodeLinkedList = initializePaymentFromFilePath("src/DataServer/data/creditInfo.txt");
@@ -38,13 +45,14 @@ public class DataServer {
                 // Output ready message
                 System.out.println("Ready for connection");
 
+                // Accept TCP connection
                 dataServerSocket = dataServerServerSocket.accept();
 
                 // Output busy message
                 System.out.println("Connection busy");
 
                 // Create HandleData thread with socket connection info and payment database
-                serverThread = new HandleData(dataServerSocket, paymentNodeLinkedList);
+                new HandleData(dataServerSocket, paymentNodeLinkedList);
             }
 
         } catch (Exception exception) {}
